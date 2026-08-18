@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrackIng · Consola de pruebas API</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #0d1117;
+    --surface: #151b26;
+    --surface-2: #1b2333;
+    --border: #2a3448;
+    --border-soft: #232c3d;
+    --text: #e7ecf5;
+    --muted: #7c879e;
+    --muted-2: #4c5670;
+    --trace: #48d9c4;
+    --trace-dim: #2a5f58;
+    --amber: #eba350;
+    --danger: #ee6a63;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(72,217,196,0.06), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 0 0 64px;
+    min-height: 100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom: 1px solid var(--border);
+    padding: 22px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    flex-wrap:wrap;
+    position: sticky;
+    top:0;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+
+  .brand{ display:flex; align-items:center; gap:14px; }
+
+  .brand svg{ display:block; }
+
+  .brand-text h1{
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin:0;
+    color: var(--text);
+  }
+  .brand-text p{
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .conn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+
+  .conn input{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    width: 240px;
+    outline: none;
+  }
+  .conn input:focus{ border-color: var(--trace); }
+
+  .led{
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--muted-2);
+    box-shadow: 0 0 0 3px rgba(124,135,158,0.12);
+    flex-shrink:0;
+    transition: all .25s ease;
+  }
+  .led.ok{ background: var(--trace); box-shadow: 0 0 0 4px rgba(72,217,196,0.18); animation: pulse 2s infinite; }
+  .led.bad{ background: var(--danger); box-shadow: 0 0 0 4px rgba(238,106,99,0.18); }
+
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity: .45; }
+  }
+
+  .btn-ping{
+    font-family: var(--mono);
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .btn-ping:hover{ border-color: var(--trace); color: var(--trace); }
+
+  /* ---------- layout ---------- */
+  main{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 32px 0;
+  }
+
+  .lead{
+    margin: 0 0 30px;
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 640px;
+    line-height:1.6;
+  }
+  .lead code{
+    font-family: var(--mono);
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--trace);
+    font-size: 12.5px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+    gap: 20px;
+  }
+
+  .panel{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .panel-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding: 16px 18px 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .panel-head .tag{
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    color: var(--bg);
+    background: var(--trace);
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .panel-head .tag.post{ background: var(--amber); }
+
+  .panel-head h2{
+    font-size: 14.5px;
+    margin: 0 0 0 10px;
+    font-weight: 600;
+    flex:1;
+  }
+
+  .panel-head .route{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  .panel-body{
+    padding: 16px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+  }
+
+  .field{ display:flex; flex-direction:column; gap: 5px; }
+  .field label{
+    font-size: 11.5px;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 0.01em;
+  }
+  .field input, .field select{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline:none;
+    width:100%;
+  }
+  .field input:focus, .field select:focus{ border-color: var(--trace); }
+  .field input::placeholder{ color: var(--muted-2); }
+
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .actions{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .btn{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    background: var(--trace);
+    color: #04211d;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .btn:hover{ filter: brightness(1.08); }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ opacity: .5; cursor:default; }
+
+  .meta{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .status-chip{
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display:none;
+  }
+  .status-chip.ok{ background: rgba(72,217,196,0.14); color: var(--trace); display:inline-block; }
+  .status-chip.warn{ background: rgba(235,163,80,0.14); color: var(--amber); display:inline-block; }
+  .status-chip.err{ background: rgba(238,106,99,0.14); color: var(--danger); display:inline-block; }
+
+  .output{
+    background: #0a0e14;
+    border: 1px solid var(--border-soft);
+    border-radius: 7px;
+    padding: 12px 13px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    color: #b9c3d6;
+    max-height: 340px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display:none;
+  }
+  .output.show{ display:block; }
+  .output .k{ color: #7fb8ff; }
+  .output .s{ color: var(--trace); }
+  .output .n{ color: var(--amber); }
+  .output .b{ color: #d199f0; }
+
+  .hint{
+    font-size: 11.5px;
+    color: var(--muted-2);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+
+  .chips{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .chip{
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .12s ease;
+  }
+  .chip:hover{ border-color: var(--trace); color: var(--trace); }
+
+  footer{
+    max-width: 1180px;
+    margin: 40px auto 0;
+    padding: 20px 32px 0;
+    border-top: 1px solid var(--border-soft);
+    color: var(--muted-2);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+      <circle cx="15" cy="15" r="13.5" stroke="#2a3448" stroke-width="1.5"/>
+      <circle cx="15" cy="7" r="2" fill="#48d9c4"/>
+      <circle cx="8" cy="20" r="2" fill="#48d9c4" fill-opacity="0.5"/>
+      <circle cx="22" cy="20" r="2" fill="#48d9c4" fill-opacity="0.5"/>
+      <path d="M15 9V14M15 14L9.5 18.2M15 14L20.5 18.2" stroke="#48d9c4" stroke-width="1.3"/>
+    </svg>
+    <div class="brand-text">
+      <h1>TrackIng — consola de pruebas</h1>
+      <p>verificación manual de la API</p>
+    </div>
+  </div>
+  <div class="conn">
+    <span class="led" id="led"></span>
+    <input id="baseUrl" type="text" value="http://127.0.0.1:8000" spellcheck="false">
+    <button class="btn-ping" onclick="ping()">Verificar conexión</button>
+  </div>
+</header>
+
+<main>
+  <p class="lead">
+    Cada bloque llama directamente a un endpoint de tu backend corriendo en local
+    (<code>uvicorn main:app --reload</code>). Escribe la URL base arriba, verifica la
+    conexión, y prueba cada endpoint con datos reales de las mallas cargadas.
+  </p>
+
+  <div class="grid">
+
+    <!-- HEALTH -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag">GET</span>
+        <h2>Health check</h2>
+        <span class="route">/api/health</span>
+      </div>
+      <div class="panel-body">
+        <p class="hint">Confirma que el servidor está arriba antes de probar el resto.</p>
+        <div class="actions">
+          <button class="btn" onclick="callHealth()">Enviar</button>
+          <span class="meta" id="meta-health"></span>
+        </div>
+        <div class="output" id="out-health"></div>
+      </div>
+    </div>
+
+    <!-- CARRERAS -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag">GET</span>
+        <h2>Carreras disponibles</h2>
+        <span class="route">/api/carreras</span>
+      </div>
+      <div class="panel-body">
+        <p class="hint">Lista las 11 mallas cargadas (carrera_id, pénsum y total de cursos). Haz clic en un resultado para copiar su carrera_id a los demás formularios.</p>
+        <div class="actions">
+          <button class="btn" onclick="callCarreras()">Enviar</button>
+          <span class="meta" id="meta-carreras"></span>
+        </div>
+        <div class="chips" id="chips-carreras"></div>
+        <div class="output" id="out-carreras"></div>
+      </div>
+    </div>
+
+    <!-- MALLA -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag">GET</span>
+        <h2>Malla curricular</h2>
+        <span class="route">/api/malla</span>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>carrera (opcional — id, nombre, o vacío para todas)</label>
+          <input id="malla-carrera" placeholder="ingenieriaCivil">
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="callMalla()">Enviar</button>
+          <span class="meta" id="meta-malla"></span>
+        </div>
+        <div class="output" id="out-malla"></div>
+      </div>
+    </div>
+
+    <!-- VALIDAR PREREQUISITOS -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag">GET</span>
+        <h2>Validar prerequisitos</h2>
+        <span class="route">/api/validar-prerequisitos</span>
+      </div>
+      <div class="panel-body">
+        <div class="row2">
+          <div class="field">
+            <label>carrera</label>
+            <input id="val-carrera" placeholder="ingenieriaCivil" value="ingenieriaCivil">
+          </div>
+          <div class="field">
+            <label>curso_codigo</label>
+            <input id="val-codigo" placeholder="0103" value="0103">
+          </div>
+        </div>
+        <div class="field">
+          <label>cursos_aprobados (separados por coma)</label>
+          <input id="val-aprobados" placeholder="0005, 0017, 0101">
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="callValidar()">Enviar</button>
+          <span class="meta" id="meta-val"></span>
+        </div>
+        <div class="output" id="out-val"></div>
+      </div>
+    </div>
+
+    <!-- CALCULAR RUTA -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag post">POST</span>
+        <h2>Calcular ruta óptima</h2>
+        <span class="route">/api/calcular-ruta</span>
+      </div>
+      <div class="panel-body">
+        <div class="row2">
+          <div class="field">
+            <label>carrera</label>
+            <input id="ruta-carrera" placeholder="ingenieriaCivil" value="ingenieriaCivil">
+          </div>
+          <div class="field">
+            <label>meta.tipo</label>
+            <select id="ruta-meta">
+              <option value="graduacion_rapida">graduacion_rapida</option>
+              <option value="adelantar">adelantar</option>
+              <option value="nivelar">nivelar</option>
+              <option value="personalizada">personalizada</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>cursos_aprobados (separados por coma)</label>
+          <input id="ruta-aprobados" placeholder="0005, 0017, 0069, 0101, 0348, 0039">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>carga_maxima_por_semestre</label>
+            <input id="ruta-carga" type="number" value="25">
+          </div>
+          <div class="field">
+            <label>semestres_objetivo (opcional)</label>
+            <input id="ruta-objetivo" type="number" placeholder="10">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="callRuta()">Enviar</button>
+          <span class="meta" id="meta-ruta"></span>
+        </div>
+        <div class="output" id="out-ruta"></div>
+      </div>
+    </div>
+
+    <!-- GENERAR HORARIO -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="tag post">POST</span>
+        <h2>Generar horario</h2>
+        <span class="route">/api/generar-horario</span>
+      </div>
+      <div class="panel-body">
+        <p class="hint">Usa los códigos del JSON de ejemplo (data/malla_curricular.json): MAT101, PROG101, MAT102, FIS101, PROG201, CAL101, FIS201, EDD101, CAL201, ALG201, BD201, ETICA101.</p>
+        <div class="field">
+          <label>cursos (separados por coma)</label>
+          <input id="hor-cursos" placeholder="MAT101, PROG101, FIS101" value="MAT101, PROG101, FIS101">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>horario_preferido</label>
+            <select id="hor-pref">
+              <option value="indiferente">indiferente</option>
+              <option value="matutino">matutino</option>
+              <option value="vespertino">vespertino</option>
+              <option value="nocturno">nocturno</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>dias_libres (opcional, ej. S)</label>
+            <input id="hor-libres" placeholder="S">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="callHorario()">Enviar</button>
+          <span class="meta" id="meta-hor"></span>
+        </div>
+        <div class="output" id="out-hor"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>trackIng · consola de pruebas local · no envía datos a ningún servidor externo</footer>
+
+<script>
+function base(){
+  return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+}
+
+function splitCsv(v){
+  return v.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function syntaxHighlight(json){
+  const escaped = json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    match => {
+      let cls = 'n';
+      if (/^"/.test(match)) cls = /:$/.test(match) ? 'k' : 's';
+      else if (/true|false/.test(match)) cls = 'b';
+      return `<span class="${cls}">${match}</span>`;
+    }
+  );
+}
+
+function setChip(id, status){
+  const el = document.getElementById(id);
+  el.className = 'status-chip';
+  if (status >= 200 && status < 300){ el.classList.add('ok'); }
+  else if (status >= 400 && status < 500){ el.classList.add('warn'); }
+  else { el.classList.add('err'); }
+  el.textContent = status;
+}
+
+async function request(method, path, body, metaId, outId, query){
+  const metaEl = document.getElementById(metaId);
+  const outEl = document.getElementById(outId);
+  metaEl.innerHTML = '<span class="status-chip warn" style="display:inline-block">…</span> enviando';
+  outEl.classList.remove('show');
+
+  let url = base() + path;
+  if (query && query.length){
+    url += '?' + query.join('&');
+  }
+
+  const t0 = performance.now();
+  try{
+    const resp = await fetch(url, {
+      method,
+      headers: body ? {'Content-Type': 'application/json'} : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const ms = Math.round(performance.now() - t0);
+    const text = await resp.text();
+    let pretty = text;
+    try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch(e) {}
+
+    metaEl.innerHTML = `<span class="status-chip" id="chip-${outId}"></span> ${ms} ms`;
+    setChip(`chip-${outId}`, resp.status);
+
+    outEl.innerHTML = syntaxHighlight(pretty);
+    outEl.classList.add('show');
+    setLed(true);
+    return { status: resp.status, data: (() => { try { return JSON.parse(text); } catch(e){ return text; } })() };
+  } catch(err){
+    const ms = Math.round(performance.now() - t0);
+    metaEl.innerHTML = `<span class="status-chip err" style="display:inline-block">error</span> ${ms} ms`;
+    outEl.textContent = 'No se pudo conectar con ' + base() + '\n\n' + err.message +
+      '\n\n¿Está corriendo uvicorn? ¿La URL base es correcta? ¿CORS habilitado?';
+    outEl.classList.add('show');
+    setLed(false);
+    return null;
+  }
+}
+
+function setLed(ok){
+  const led = document.getElementById('led');
+  led.classList.remove('ok', 'bad');
+  led.classList.add(ok ? 'ok' : 'bad');
+}
+
+async function ping(){
+  const r = await request('GET', '/api/health', null, 'meta-health', 'out-health');
+}
+
+async function callHealth(){
+  await request('GET', '/api/health', null, 'meta-health', 'out-health');
+}
+
+async function callCarreras(){
+  const r = await request('GET', '/api/carreras', null, 'meta-carreras', 'out-carreras');
+  const chips = document.getElementById('chips-carreras');
+  chips.innerHTML = '';
+  if (r && Array.isArray(r.data)){
+    r.data.forEach(c => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = `${c.carrera_id} (${c.vigente_desde})`;
+      chip.onclick = () => {
+        ['malla-carrera','val-carrera','ruta-carrera'].forEach(id => {
+          document.getElementById(id).value = c.carrera_id;
+        });
+      };
+      chips.appendChild(chip);
+    });
+  }
+}
+
+async function callMalla(){
+  const carrera = document.getElementById('malla-carrera').value.trim();
+  const query = carrera ? [`carrera=${encodeURIComponent(carrera)}`] : [];
+  await request('GET', '/api/malla', null, 'meta-malla', 'out-malla', query);
+}
+
+async function callValidar(){
+  const carrera = document.getElementById('val-carrera').value.trim();
+  const codigo = document.getElementById('val-codigo').value.trim();
+  const aprobados = splitCsv(document.getElementById('val-aprobados').value);
+
+  const query = [
+    `carrera=${encodeURIComponent(carrera)}`,
+    `curso_codigo=${encodeURIComponent(codigo)}`,
+    ...aprobados.map(c => `cursos_aprobados=${encodeURIComponent(c)}`)
+  ];
+  await request('GET', '/api/validar-prerequisitos', null, 'meta-val', 'out-val', query);
+}
+
+async function callRuta(){
+  const body = {
+    carrera: document.getElementById('ruta-carrera').value.trim(),
+    cursos_aprobados: splitCsv(document.getElementById('ruta-aprobados').value),
+    meta: {
+      tipo: document.getElementById('ruta-meta').value,
+      semestres_objetivo: document.getElementById('ruta-objetivo').value
+        ? parseInt(document.getElementById('ruta-objetivo').value, 10) : null,
+    },
+    carga_maxima_por_semestre: parseInt(document.getElementById('ruta-carga').value || '25', 10),
+  };
+  await request('POST', '/api/calcular-ruta', body, 'meta-ruta', 'out-ruta');
+}
+
+async function callHorario(){
+  const body = {
+    cursos: splitCsv(document.getElementById('hor-cursos').value),
+    preferencias: {
+      horario_preferido: document.getElementById('hor-pref').value,
+      dias_libres: splitCsv(document.getElementById('hor-libres').value),
+    },
+  };
+  await request('POST', '/api/generar-horario', body, 'meta-hor', 'out-hor');
+}
+
+// intenta verificar conexión automáticamente al cargar
+window.addEventListener('load', () => { ping(); });
+</script>
+
+</body>
+</html>
