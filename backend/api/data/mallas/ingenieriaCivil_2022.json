@@ -1,0 +1,906 @@
+{
+  "carrera": "Ingeniería Civil",
+  "carrera_id": "ingenieriaCivil",
+  "pensum": "CLAR",
+  "vigente_desde": 2022,
+  "fuente": "https://redesestudio.ingenieria.usac.edu.gt/redesDeEstudio/ingenieriaCivil/18/clar",
+  "total_cursos": 86,
+  "cursos": [
+    {
+      "codigo": "0005",
+      "nombre": "Técnicas de Estudio e Investigación",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0017",
+      "nombre": "Área Social Humanística 1",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0069",
+      "nombre": "Área Técnica Complementaria 1",
+      "creditos": 4,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0101",
+      "nombre": "Área Matemática Básica 1",
+      "creditos": 9,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0348",
+      "nombre": "Química General 1",
+      "creditos": 7,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0039",
+      "nombre": "Deportes 1",
+      "creditos": 2,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0019",
+      "nombre": "Área Social Humanística 2",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [
+        "0017"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0074",
+      "nombre": "Dibujo Constructivo para Ingeniería",
+      "creditos": 6,
+      "semestre": 2,
+      "prerequisitos": [
+        "0069"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0103",
+      "nombre": "Área Matemática Básica 2",
+      "creditos": 9,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0147",
+      "nombre": "Física Básica",
+      "creditos": 5,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0349",
+      "nombre": "Química para Ingeniería Civil",
+      "creditos": 6,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101",
+        "0348"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0028",
+      "nombre": "Ecología",
+      "creditos": 4,
+      "semestre": 3,
+      "prerequisitos": [
+        "0349"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0107",
+      "nombre": "Área Matemática Intermedia 1",
+      "creditos": 9,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0150",
+      "nombre": "Física 1",
+      "creditos": 5,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103",
+        "0147"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2025",
+      "nombre": "Prácticas Iniciales",
+      "creditos": 0,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103",
+        "0074",
+        "0147"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0001",
+      "nombre": "Ética Profesional",
+      "creditos": 2,
+      "semestre": 3,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0010",
+      "nombre": "Lógica",
+      "creditos": 1,
+      "semestre": 3,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0018",
+      "nombre": "Filosofía de la Ciencia",
+      "creditos": 1,
+      "semestre": 3,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0030",
+      "nombre": "Geografía",
+      "creditos": 4,
+      "semestre": 3,
+      "prerequisitos": [
+        "0147"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0080",
+      "nombre": "Topografía 1",
+      "creditos": 7,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0074"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0112",
+      "nombre": "Área Matemática Intermedia 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0114",
+      "nombre": "Área Matemática Intermedia 3",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0170",
+      "nombre": "Mecánica Analítica 1",
+      "creditos": 4,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0450",
+      "nombre": "Geología",
+      "creditos": 4,
+      "semestre": 4,
+      "prerequisitos": [
+        "0028",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0732",
+      "nombre": "Estadística 1",
+      "creditos": 5,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0005"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0152",
+      "nombre": "Física 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0474",
+      "nombre": "Introducción a la Ingeniería Petrolera",
+      "creditos": 4,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0662",
+      "nombre": "Legislación 1",
+      "creditos": 3,
+      "semestre": 4,
+      "prerequisitos": [
+        "0019",
+        "0028"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0082",
+      "nombre": "Topografía 2",
+      "creditos": 7,
+      "semestre": 5,
+      "prerequisitos": [
+        "0080"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0118",
+      "nombre": "Matemática Aplicada 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0114"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0250",
+      "nombre": "Mecánica de Fluidos",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0170"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0300",
+      "nombre": "Resistencia de Materiales 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0170"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0453",
+      "nombre": "Materiales de Construcción 1",
+      "creditos": 6,
+      "semestre": 5,
+      "prerequisitos": [
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0476",
+      "nombre": "Geología del Petróleo",
+      "creditos": 4,
+      "semestre": 5,
+      "prerequisitos": [
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0478",
+      "nombre": "Petrología",
+      "creditos": 4,
+      "semestre": 5,
+      "prerequisitos": [
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0536",
+      "nombre": "Perforación de Pozos 1",
+      "creditos": 4,
+      "semestre": 5,
+      "prerequisitos": [
+        "0450",
+        "0474"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0538",
+      "nombre": "Geofísica",
+      "creditos": 3,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0687",
+      "nombre": "Geología Estructural",
+      "creditos": 3,
+      "semestre": 5,
+      "prerequisitos": [
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0201",
+      "nombre": "Instalaciones Eléctricas (CIVIL)",
+      "creditos": 4,
+      "semestre": 6,
+      "prerequisitos": [
+        "0103",
+        "0147",
+        "0074"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0252",
+      "nombre": "Hidráulica",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0250"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0302",
+      "nombre": "Resistencia de Materiales 2",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0300"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0455",
+      "nombre": "Materiales de Construcción 2",
+      "creditos": 7,
+      "semestre": 6,
+      "prerequisitos": [
+        "0300",
+        "0453"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0458",
+      "nombre": "Mecánica de Suelos 1",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0300",
+        "0450"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0700",
+      "nombre": "Ingeniería Económica 1",
+      "creditos": 4,
+      "semestre": 6,
+      "prerequisitos": [
+        "0118"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0022",
+      "nombre": "Psicología Industrial",
+      "creditos": 3,
+      "semestre": 6,
+      "prerequisitos": [
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0084",
+      "nombre": "Topografía 3",
+      "creditos": 6,
+      "semestre": 6,
+      "prerequisitos": [
+        "0082",
+        "0118"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0653",
+      "nombre": "Ingeniería de Costos",
+      "creditos": 4,
+      "semestre": 6,
+      "prerequisitos": [
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0664",
+      "nombre": "Legislación 2",
+      "creditos": 3,
+      "semestre": 6,
+      "prerequisitos": [
+        "0662"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0254",
+      "nombre": "Hidrología",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0252",
+        "0082",
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0286",
+      "nombre": "Hidráulica de Canales",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0252"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0311",
+      "nombre": "Análisis Estructural",
+      "creditos": 5,
+      "semestre": 7,
+      "prerequisitos": [
+        "0302"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0314",
+      "nombre": "Concreto Armado 1",
+      "creditos": 5,
+      "semestre": 7,
+      "prerequisitos": [
+        "0302",
+        "0455"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0550",
+      "nombre": "Vías Terrestres 1",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0082",
+        "0458"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2036",
+      "nombre": "Prácticas Intermedias",
+      "creditos": 0,
+      "semestre": 7,
+      "prerequisitos": [
+        "2025",
+        "0455"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0258",
+      "nombre": "Máquinas Hidráulicas",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0252"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0659",
+      "nombre": "Administración de Recursos Humanos",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0022"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0702",
+      "nombre": "Ingeniería Económica 2",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0700"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0280",
+      "nombre": "Ingeniería Sanitaria 1",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0254"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0282",
+      "nombre": "Ingeniería Sanitaria 2",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0254"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0288",
+      "nombre": "Introducción al Estudio de Impacto Ambiental",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0019",
+        "0028",
+        "0254",
+        "0700"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0316",
+      "nombre": "Concreto Armado 2",
+      "creditos": 5,
+      "semestre": 8,
+      "prerequisitos": [
+        "0314"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0318",
+      "nombre": "Cimentaciones 1",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0311",
+        "0314"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0560",
+      "nombre": "Vías Terrestres 2",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0550",
+        "0314"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7980",
+      "nombre": "Investigación 1",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0550",
+        "0311",
+        "0254",
+        "2036"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0173",
+      "nombre": "Análisis Mecánico",
+      "creditos": 5,
+      "semestre": 8,
+      "prerequisitos": [
+        "0170",
+        "0311"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0262",
+      "nombre": "Aguas Subterráneas",
+      "creditos": 3,
+      "semestre": 8,
+      "prerequisitos": [
+        "0254"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0307",
+      "nombre": "Tipología Estructural",
+      "creditos": 3,
+      "semestre": 8,
+      "prerequisitos": [
+        "0300"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0672",
+      "nombre": "Fundamentos de Administración",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0659"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0284",
+      "nombre": "Saneamiento Ambiental",
+      "creditos": 3,
+      "semestre": 9,
+      "prerequisitos": [
+        "0280",
+        "0282"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0320",
+      "nombre": "Cimentaciones 2",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0318"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0322",
+      "nombre": "Diseño Estructural 1",
+      "creditos": 6,
+      "semestre": 9,
+      "prerequisitos": [
+        "0311",
+        "0316"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0460",
+      "nombre": "Pavimentos",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0455",
+        "0458",
+        "0560"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0706",
+      "nombre": "Preparación y Evaluación de Proyectos 1",
+      "creditos": 5,
+      "semestre": 9,
+      "prerequisitos": [
+        "0700",
+        "0288"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0256",
+      "nombre": "Obras Hidráulicas",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0286",
+        "0318"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0335",
+      "nombre": "Gestión de Desastres",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0288"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0585",
+      "nombre": "Ingeniería de Tránsito y Transportes",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0550"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0324",
+      "nombre": "Diseño Estructural 2",
+      "creditos": 6,
+      "semestre": 10,
+      "prerequisitos": [
+        "0322"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0332",
+      "nombre": "Puentes",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0322",
+        "0320"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0346",
+      "nombre": "Métodos de Construcción y Supervisión de Obras",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0322"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0666",
+      "nombre": "Costos Presupuestos y Avalúos",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0322",
+        "0460",
+        "0320"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0710",
+      "nombre": "Planeamiento",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2001",
+      "nombre": "Prácticas Finales Ingeniería Civil",
+      "creditos": 0,
+      "semestre": 10,
+      "prerequisitos": [
+        "2036",
+        "0320",
+        "0322"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7981",
+      "nombre": "Seminario de Investigación E.P.S. Civil",
+      "creditos": 3,
+      "semestre": 10,
+      "prerequisitos": [
+        "7980",
+        "0284"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7991",
+      "nombre": "Seminario de Investigación Civil",
+      "creditos": 3,
+      "semestre": 10,
+      "prerequisitos": [
+        "7980",
+        "0284"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0709",
+      "nombre": "Gestión de Proyectos",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0712",
+      "nombre": "Urbanismo",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0706"
+      ],
+      "obligatorio": true
+    }
+  ]
+}
