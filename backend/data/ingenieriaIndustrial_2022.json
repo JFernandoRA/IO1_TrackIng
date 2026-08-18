@@ -28,7 +28,7 @@
       "creditos": 4,
       "semestre": 1,
       "prerequisitos": [],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0101",
@@ -52,7 +52,7 @@
       "creditos": 3,
       "semestre": 1,
       "prerequisitos": [],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0019",
@@ -72,7 +72,7 @@
       "prerequisitos": [
         "0348"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0103",
@@ -103,7 +103,7 @@
         "0005",
         "0017"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0667",
@@ -124,7 +124,7 @@
         "0101",
         "0348"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0022",
@@ -134,7 +134,7 @@
       "prerequisitos": [
         "0019"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0073",
@@ -145,7 +145,7 @@
         "0069",
         "0667"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0107",
@@ -176,7 +176,7 @@
       "prerequisitos": [
         "0662"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0732",
@@ -207,7 +207,7 @@
       "prerequisitos": [
         "0019"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0112",
@@ -249,7 +249,7 @@
         "0107",
         "0150"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0734",
@@ -269,7 +269,7 @@
       "prerequisitos": [
         "0019"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0116",
@@ -323,7 +323,7 @@
       "prerequisitos": [
         "0152"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0637",
@@ -344,7 +344,7 @@
         "0112",
         "0114"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0172",
@@ -355,7 +355,7 @@
         "0114",
         "0170"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0368",
@@ -366,7 +366,7 @@
         "0152",
         "0734"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0390",
@@ -416,7 +416,7 @@
       "prerequisitos": [
         "0637"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0122",
@@ -426,7 +426,7 @@
       "prerequisitos": [
         "0118"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0302",
@@ -436,7 +436,7 @@
       "prerequisitos": [
         "0300"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0603",
@@ -478,7 +478,7 @@
         "0022",
         "0639"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0674",
@@ -488,7 +488,7 @@
       "prerequisitos": [
         "0639"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "2036",
@@ -509,7 +509,7 @@
       "prerequisitos": [
         "0639"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0392",
@@ -529,7 +529,7 @@
       "prerequisitos": [
         "0452"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0620",
@@ -569,7 +569,7 @@
       "prerequisitos": [
         "0674"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0700",
@@ -579,7 +579,7 @@
       "prerequisitos": [
         "0655"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0504",
@@ -661,7 +661,7 @@
       "prerequisitos": [
         "0700"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0706",
@@ -682,7 +682,7 @@
       "prerequisitos": [
         "0640"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "7985",
@@ -692,7 +692,7 @@
       "prerequisitos": [
         "0640"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0606",
@@ -703,7 +703,7 @@
         "0603",
         "0640"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0609",
@@ -743,7 +743,7 @@
       "prerequisitos": [
         "0706"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "2005",
@@ -764,7 +764,7 @@
       "prerequisitos": [
         "0643"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0645",
@@ -774,7 +774,7 @@
       "prerequisitos": [
         "0640"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0669",
@@ -784,7 +784,7 @@
       "prerequisitos": [
         "0665"
       ],
-      "obligatorio": true
+      "obligatorio": false
     }
   ]
 }
