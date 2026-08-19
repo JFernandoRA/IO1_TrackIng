@@ -377,11 +377,11 @@
       "prerequisitos": [
         "0732"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0601",
-      "nombre": "Investigación de Operaciones I",
+      "nombre": "Investigación de Operaciones 1",
       "creditos": 6,
       "semestre": 6,
       "prerequisitos": [
@@ -468,7 +468,7 @@
     },
     {
       "codigo": "0603",
-      "nombre": "Investigación de Operaciones II",
+      "nombre": "Investigación de Operaciones 2",
       "creditos": 6,
       "semestre": 7,
       "prerequisitos": [
@@ -668,7 +668,7 @@
         "0719",
         "0283"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0968",
@@ -755,7 +755,7 @@
         "0786",
         "0793"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0967",
@@ -765,7 +765,7 @@
       "prerequisitos": [
         "0975"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0735",
@@ -775,7 +775,7 @@
       "prerequisitos": [
         "0785"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0974",
@@ -785,7 +785,7 @@
       "prerequisitos": [
         "0975"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "7999",
