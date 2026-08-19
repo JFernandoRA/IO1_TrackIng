@@ -456,7 +456,7 @@
         "0778",
         "0781"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0603",
@@ -756,7 +756,7 @@
         "0785",
         "0788"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0790",
@@ -776,7 +776,7 @@
       "prerequisitos": [
         "0972"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0974",
