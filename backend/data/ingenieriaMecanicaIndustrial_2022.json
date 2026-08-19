@@ -185,7 +185,7 @@
       "prerequisitos": [
         "0019"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0352",
@@ -196,7 +196,7 @@
         "0101",
         "0348"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0112",
@@ -258,7 +258,7 @@
       "prerequisitos": [
         "0019"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0116",
@@ -334,7 +334,7 @@
         "0112",
         "0114"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0252",
@@ -405,7 +405,7 @@
       "prerequisitos": [
         "0118"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0122",
@@ -415,7 +415,7 @@
       "prerequisitos": [
         "0118"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0022",
@@ -507,7 +507,7 @@
       "prerequisitos": [
         "0392"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0526",
@@ -577,7 +577,7 @@
       "prerequisitos": [
         "0506"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0603",
@@ -607,7 +607,7 @@
       "prerequisitos": [
         "0653"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0672",
@@ -648,7 +648,7 @@
       "prerequisitos": [
         "0512"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0528",
@@ -658,7 +658,7 @@
       "prerequisitos": [
         "0526"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0634",
@@ -741,7 +741,7 @@
       "prerequisitos": [
         "0700"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0709",
@@ -804,7 +804,7 @@
       "prerequisitos": [
         "0706"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0614",
