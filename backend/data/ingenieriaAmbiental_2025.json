@@ -60,7 +60,7 @@
       "creditos": 6,
       "semestre": 1,
       "prerequisitos": [],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0019",
@@ -297,7 +297,7 @@
         "0112",
         "0114"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0082",
@@ -340,7 +340,7 @@
         "0118",
         "0732"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0879",
@@ -404,7 +404,7 @@
         "0450",
         "0879"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0370",
@@ -521,7 +521,7 @@
       "prerequisitos": [
         "0360"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0364",
@@ -619,7 +619,7 @@
         "0360",
         "0364"
       ],
-      "obligatorio": true
+      "obligatorio": false
     },
     {
       "codigo": "0643",
@@ -707,7 +707,7 @@
         "0288",
         "0193"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "7989",
@@ -718,7 +718,7 @@
         "0288",
         "0193"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0001",
