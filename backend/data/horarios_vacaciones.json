@@ -1,0 +1,26 @@
+{
+  "periodo": "Vacaciones 2026-1",
+  "cursos": [
+    {
+      "codigo": "0101",
+      "nombre": "Área Matemática Básica 1",
+      "horas": 4,
+      "es_laboratorio": false,
+      "secciones_disponibles": ["L-M 8-12", "M-J 14-18"]
+    },
+    {
+      "codigo": "LAB_PROG101",
+      "nombre": "Laboratorio de Programación",
+      "horas": 2,
+      "es_laboratorio": true,
+      "secciones_disponibles": ["V 8-10"]
+    },
+    {
+      "codigo": "0005",
+      "nombre": "Técnicas de Estudio e Investigación",
+      "horas": 2,
+      "es_laboratorio": false,
+      "secciones_disponibles": ["L-V 10-12"]
+    }
+  ]
+}

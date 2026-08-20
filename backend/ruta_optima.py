@@ -1,278 +1,468 @@
+# -*- coding: utf-8 -*-
 """
 ruta_optima.py
+================
+Algoritmos de planificación académica para TrackIng.
 
-Algoritmo puro (sin FastAPI, sin rutas HTTP) que calcula la ruta académica
-más rápida posible para terminar los cursos OBLIGATORIOS de una malla
-curricular, respetando estrictamente las dependencias de prerequisitos y
-un límite máximo de créditos por semestre.
+Adaptado al esquema real de las mallas curriculares de la Facultad de
+Ingeniería de la USAC (las que exporta redesEstudio), donde cada curso
+tiene esta forma:
 
-Conceptos de teoría de grafos aplicados:
-  - Cada curso pendiente es un NODO de un grafo dirigido (DiGraph).
-  - Cada prerequisito genera una ARISTA dirigida prerequisito -> curso,
-    es decir, "para llegar a este nodo hay que pasar antes por el otro".
-  - Que la malla no tenga ciclos es indispensable: un ciclo significaría
-    que un curso es prerequisito de sí mismo (directa o indirectamente),
-    lo cual es imposible de cursar. Se valida con
-    nx.is_directed_acyclic_graph().
-  - El ORDEN de asignación dentro de cada semestre usa el out-degree de
-    cada nodo (cuántos cursos dependen DIRECTAMENTE de él) como medida de
-    "qué tan crítico" es liberarlo pronto: mientras más cursos desbloquea,
-    antes conviene cursarlo, porque retrasarlo retrasa en cascada a todo
-    lo que depende de él.
-  - El bucle principal es, en esencia, un ordenamiento topológico
-    (equivalente a Kahn's algorithm) pero agrupado "por capas": en cada
-    iteración se calculan todos los nodos cuyas dependencias ya están
-    resueltas (in-degree efectivo cero contra lo ya aprobado/asignado) y
-    de esa capa se seleccionan tantos como quepan en el límite de
-    créditos, dejando el resto para la siguiente capa/semestre.
+    {
+        "codigo": "0101",
+        "nombre": "Área Matemática Básica 1",
+        "creditos": 9,
+        "semestre": 1,
+        "prerequisitos": [],
+        "obligatorio": true
+    }
+
+Esas mallas NO incluyen horas teóricas ni de laboratorio (solo créditos),
+así que para la ruta de vacaciones (que sí necesita horas teóricas) este
+módulo usa el número de créditos como aproximación cuando el curso no
+trae "horas_teoricas" explícito. Si en algún momento tienes datos reales
+de horas (por ejemplo en horarios_vacaciones.json), basta con agregar
+"horas_teoricas" / "horas_laboratorio" a esos cursos y se usarán en lugar
+de la aproximación. Ver `horas_teoricas_de` y `horas_laboratorio_de`.
+
+Contiene dos algoritmos independientes:
+
+- calcular_ruta_regular:
+    Asignación dinámica por "slots" semestrales (no por el campo
+    "semestre" estático del pénsum). Cada slot se llena hasta el límite
+    de créditos del estudiante, sin respetar ciegamente el orden del
+    pénsum, y permite reprogramar cursos reprobados en el primer slot
+    futuro con cupo disponible, siempre validando estrictamente los
+    prerequisitos.
+
+- calcular_ruta_vacaciones:
+    Planifica periodos vacacionales respetando un límite de 4 horas
+    teóricas (excluyendo horas de laboratorio), filtrando únicamente
+    cursos publicados en el horario vacacional, permitiendo optativos
+    que desbloqueen obligatorios futuros, y limitando a 3 cursos por
+    periodo.
+
+Ambas funciones retornan diccionarios con la misma forma:
+    {clave_periodo: [lista_de_cursos]}
+donde cada curso es el diccionario original tal como aparece en la malla
+curricular (codigo, nombre, creditos, semestre, obligatorio,
+prerequisitos, ...).
+
+Compatible con Windows, Python 3.13 y NetworkX 3.6.1. Única dependencia
+externa: networkx.
 """
 
-from typing import Dict, List, Optional, Any
+from __future__ import annotations
+
+from typing import Iterable
+
 import networkx as nx
 
 
-class RutaOptimaError(ValueError):
-    """Errores de validación básica de entrada (no de lógica de negocio)."""
-
-
-def calcular_ruta_optima(
-    cursos_aprobados: List[str],
-    malla_curricular: Dict[str, Dict[str, Any]],
-    limite_creditos_semestre: int,
-) -> Dict[str, Any]:
+class RutaOptimaError(Exception):
     """
-    Calcula la ruta semestre a semestre para terminar los cursos
-    obligatorios pendientes de una malla curricular en el menor número
-    de semestres posible, respetando prerequisitos y el límite de
-    créditos por semestre.
+    Error de dominio para la planificación académica.
 
-    Parámetros
-    ----------
-    cursos_aprobados : List[str]
-        Códigos de cursos que el estudiante ya aprobó (de cualquier tipo,
-        obligatorio u optativo).
-    malla_curricular : Dict[str, Dict]
-        Diccionario código -> datos del curso. Cada curso debe traer al
-        menos: "codigo", "nombre", "creditos", "semestre",
-        "prerequisitos" (lista de códigos) y "obligatorio" (bool).
-    limite_creditos_semestre : int
-        Máximo de créditos permitidos por semestre regular.
-
-    Retorna
-    -------
-    Dict[str, Any]
-        - Caso éxito: diccionario con claves "Semestre_1", "Semestre_2", ...
-          cada una con una lista de diccionarios
-          {"codigo", "nombre", "creditos", "semestre_oficial"}.
-        - Caso bloqueo (ciclo en la malla, créditos insuficientes para un
-          curso individual, o cuello de botella de prerequisitos):
-          diccionario con:
-            {
-              "advertencia": "<mensaje explicando el problema>",
-              "cursos_bloqueados": ["COD1", "COD2", ...],
-              "ruta_parcial": {<lo que sí se logró asignar antes de trabar>}
-            }
+    Se lanza cuando la malla curricular contiene un ciclo de
+    prerequisitos, cuando existen cursos bloqueados sin una combinación
+    de prerequisitos alcanzable, o cuando un curso individual excede por
+    sí solo el límite de créditos/horas disponible.
     """
-    # ------------------------------------------------------------------
-    # 0) Validación básica de entrada (manejo de errores de tipo/forma).
-    # ------------------------------------------------------------------
-    if not isinstance(malla_curricular, dict):
-        raise RutaOptimaError("malla_curricular debe ser un diccionario código -> curso")
-    if not isinstance(cursos_aprobados, list):
-        raise RutaOptimaError("cursos_aprobados debe ser una lista de códigos")
-    if not isinstance(limite_creditos_semestre, int) or limite_creditos_semestre <= 0:
-        raise RutaOptimaError("limite_creditos_semestre debe ser un entero mayor a cero")
 
-    # Normalizamos códigos a mayúsculas para comparar de forma consistente
-    # (los datos reales usan códigos numéricos, pero esto también soporta
-    # códigos alfanuméricos sin distinguir mayúsculas/minúsculas).
-    aprobados_set = {str(codigo).strip().upper() for codigo in cursos_aprobados}
 
-    # ------------------------------------------------------------------
-    # 1) Filtrado: solo cursos OBLIGATORIOS y NO aprobados.
-    #    Los optativos se ignoran por completo desde este punto en
-    #    adelante, tal como pide el requerimiento.
-    # ------------------------------------------------------------------
-    malla_pendiente: Dict[str, Dict[str, Any]] = {}
-    for codigo_raw, curso in malla_curricular.items():
-        codigo = str(codigo_raw).strip().upper()
-        if not curso.get("obligatorio", True):
-            continue  # se descarta: no es obligatorio
-        if codigo in aprobados_set:
-            continue  # se descarta: ya aprobado
-        malla_pendiente[codigo] = curso
+# ---------------------------------------------------------------------------
+# Helpers de horas (las mallas de USAC solo traen créditos)
+# ---------------------------------------------------------------------------
 
-    # Si no queda nada pendiente, la ruta está completa desde el inicio.
-    if not malla_pendiente:
-        return {}
+def horas_teoricas_de(curso: dict) -> float:
+    """
+    Horas teóricas semanales de un curso.
 
-    # ------------------------------------------------------------------
-    # 2) Construcción del grafo dirigido de prerequisitos.
-    #    Nodo = curso pendiente. Arista prereq -> curso = dependencia.
-    #    Solo se agregan aristas entre nodos que EXISTEN en el grafo
-    #    (es decir, entre cursos obligatorios aún pendientes); si un
-    #    prerequisito ya está aprobado o no es obligatorio, no genera
-    #    arista porque no representa una restricción pendiente dentro
-    #    de esta ruta, pero sí se sigue validando su cumplimiento más
-    #    abajo contra el set de aprobados.
-    # ------------------------------------------------------------------
+    Las mallas oficiales de USAC (redesEstudio) no incluyen este campo,
+    así que si no está presente se usa el número de créditos como
+    aproximación razonable. Si tu curso sí trae "horas_teoricas" (por
+    ejemplo porque lo agregaste manualmente en horarios_vacaciones.json),
+    ese valor tiene prioridad sobre la aproximación.
+    """
+    if "horas_teoricas" in curso and curso["horas_teoricas"] is not None:
+        return curso["horas_teoricas"]
+    return curso.get("creditos", 0)
+
+
+def horas_laboratorio_de(curso: dict) -> float:
+    """Horas de laboratorio semanales; 0 si el curso no las especifica."""
+    return curso.get("horas_laboratorio", 0) or 0
+
+
+def _es_obligatorio(curso: dict) -> bool:
+    """Un curso sin el campo 'obligatorio' se asume obligatorio por defecto."""
+    return bool(curso.get("obligatorio", True))
+
+
+# ---------------------------------------------------------------------------
+# Utilidades internas compartidas
+# ---------------------------------------------------------------------------
+
+def _construir_grafo(cursos: list[dict]) -> nx.DiGraph:
+    """
+    Construye el grafo dirigido prerequisito -> curso a partir de la malla.
+
+    Se valida que todo prerequisito referenciado exista en la propia malla,
+    para evitar fallos silenciosos por datos inconsistentes.
+    """
     grafo = nx.DiGraph()
-    grafo.add_nodes_from(malla_pendiente.keys())
+    por_codigo = {curso["codigo"]: curso for curso in cursos}
 
-    for codigo, curso in malla_pendiente.items():
-        for prereq_raw in curso.get("prerequisitos", []) or []:
-            prereq = str(prereq_raw).strip().upper()
-            if prereq in malla_pendiente:
-                grafo.add_edge(prereq, codigo)
+    for curso in cursos:
+        grafo.add_node(curso["codigo"], **curso)
 
-    # ------------------------------------------------------------------
-    # 3) Validación de ciclos: una malla bien diseñada es un DAG
-    #    (grafo acíclico dirigido). Si hay un ciclo, es imposible generar
-    #    una ruta válida porque algún curso terminaría dependiendo,
-    #    directa o indirectamente, de sí mismo.
-    # ------------------------------------------------------------------
-    if not nx.is_directed_acyclic_graph(grafo):
-        ciclo = nx.find_cycle(grafo)
-        cursos_en_ciclo = sorted({nodo for arista in ciclo for nodo in arista})
-        return {
-            "advertencia": (
-                "Se detectó un ciclo de prerequisitos en la malla curricular; "
-                "no es posible calcular una ruta válida."
-            ),
-            "cursos_bloqueados": cursos_en_ciclo,
-            "ruta_parcial": {},
-        }
+    for curso in cursos:
+        for prereq in curso.get("prerequisitos", []):
+            if prereq not in por_codigo:
+                raise RutaOptimaError(
+                    f"El curso '{curso['codigo']}' ({curso.get('nombre', '')}) "
+                    f"declara el prerequisito '{prereq}', que no existe en la "
+                    "malla curricular cargada."
+                )
+            grafo.add_edge(prereq, curso["codigo"])
 
-    # ------------------------------------------------------------------
-    # 4) Prioridad de asignación: out-degree de cada nodo.
-    #    out_degree(curso) = cantidad de cursos que dependen DIRECTAMENTE
-    #    de él en el grafo. A mayor out-degree, más "cuellos de botella"
-    #    desbloquea, así que se prioriza sobre cursos con out-degree bajo.
-    #    Como criterio de desempate se usa el semestre oficial más bajo
-    #    (para respetar en lo posible el orden natural del pénsum) y,
-    #    por último, el código para que el resultado sea determinista.
-    # ------------------------------------------------------------------
-    out_degree = dict(grafo.out_degree())
+    return grafo
 
-    def clave_prioridad(codigo: str):
-        curso = malla_pendiente[codigo]
-        return (
-            -out_degree.get(codigo, 0),          # mayor out-degree primero
-            curso.get("semestre", 0),             # semestre oficial más bajo primero
-            codigo,                                # desempate determinista
+
+def _validar_sin_ciclos(grafo: nx.DiGraph) -> None:
+    """Lanza RutaOptimaError con el ciclo exacto si la malla no es un DAG."""
+    if nx.is_directed_acyclic_graph(grafo):
+        return
+
+    ciclo = nx.find_cycle(grafo)
+    secuencia = " -> ".join(origen for origen, _destino in ciclo)
+    secuencia = f"{secuencia} -> {ciclo[0][0]}"
+    raise RutaOptimaError(
+        "La malla curricular contiene un ciclo de prerequisitos y no puede "
+        f"planificarse: {secuencia}"
+    )
+
+
+def _diagnosticar_bloqueo(
+    pendientes: Iterable[str],
+    por_codigo: dict[str, dict],
+    aprobados_acumulado: set[str],
+) -> str:
+    """
+    Genera un mensaje legible indicando, para cada curso pendiente que no
+    pudo entrar en el slot actual, qué prerequisitos le faltan.
+    """
+    detalle = []
+    for codigo in sorted(pendientes):
+        curso = por_codigo[codigo]
+        faltan = sorted(set(curso.get("prerequisitos", [])) - aprobados_acumulado)
+        if faltan:
+            detalle.append(f"'{codigo}' ({curso.get('nombre', '')}) requiere {faltan}")
+    if not detalle:
+        # No debería ocurrir si _validar_sin_ciclos ya se ejecutó, pero se
+        # deja como red de seguridad con un mensaje genérico útil.
+        detalle.append(
+            f"cursos {sorted(pendientes)} no tienen combinación de "
+            "prerequisitos alcanzable con lo aprobado hasta el momento."
         )
+    return "; ".join(detalle)
 
-    # ------------------------------------------------------------------
-    # 5) Verificación temprana: si algún curso individual excede por sí
-    #    solo el límite de créditos por semestre, es imposible asignarlo
-    #    jamás y hay que reportarlo como advertencia en vez de entrar en
-    #    un bucle infinito.
-    # ------------------------------------------------------------------
-    imposibles = [
-        codigo
-        for codigo, curso in malla_pendiente.items()
-        if curso.get("creditos", 0) > limite_creditos_semestre
-    ]
-    if imposibles:
-        return {
-            "advertencia": (
-                "Hay cursos obligatorios cuyos créditos superan el límite máximo "
-                f"por semestre ({limite_creditos_semestre}); no se pueden asignar nunca "
-                "con ese límite."
-            ),
-            "cursos_bloqueados": sorted(imposibles),
-            "ruta_parcial": {},
-        }
 
-    # ------------------------------------------------------------------
-    # 6) Bucle greedy semestre por semestre (topological sort por capas
-    #    + empaquetado por créditos, tipo "knapsack" simple/goloso).
-    # ------------------------------------------------------------------
-    pendientes = set(malla_pendiente.keys())
-    asignados_acumulados: set = set()  # cursos ya colocados en semestres previos de ESTA ruta
-    ruta: Dict[str, List[Dict[str, Any]]] = {}
-    numero_semestre = 1
+# ---------------------------------------------------------------------------
+# Ruta regular (slots semestrales dinámicos)
+# ---------------------------------------------------------------------------
 
-    def prerequisitos_cumplidos(codigo: str) -> bool:
-        """
-        Un curso está disponible para cursarse cuando TODOS sus
-        prerequisitos ya están satisfechos: o bien porque el estudiante
-        ya los aprobó antes de esta ruta, o porque quedaron asignados en
-        un semestre anterior de la ruta que se está construyendo.
-        Esto equivale a decir que, en el grafo, todas sus aristas
-        entrantes provienen de nodos ya "resueltos" (in-degree efectivo
-        cero contra el conjunto ya cubierto).
-        """
-        curso = malla_pendiente[codigo]
-        for prereq_raw in curso.get("prerequisitos", []) or []:
-            prereq = str(prereq_raw).strip().upper()
-            if prereq in aprobados_set or prereq in asignados_acumulados:
-                continue
-            # Si el prerequisito no está en la malla pendiente, en la
-            # malla original (obligatorio u optativo) tampoco cuenta como
-            # cumplido salvo que ya esté en aprobados; se marca como no
-            # cumplido para forzar que se reporte el bloqueo.
-            return False
-        return True
+def calcular_ruta_regular(
+    cursos: list[dict],
+    aprobados: Iterable[str] | None = None,
+    reprobados: Iterable[str] | None = None,
+    limite_creditos: int = 37,
+) -> dict[str, list[dict]]:
+    """
+    Calcula la ruta académica regular usando slots semestrales dinámicos.
+
+    A diferencia de una ruta "por pénsum fijo", cada slot se llena hasta el
+    límite de créditos disponible combinando cursos de distintos semestres
+    oficiales (campo "semestre") cuando sus prerequisitos ya están
+    satisfechos. Los cursos reprobados se reintegran a la bolsa de
+    pendientes y compiten por el primer slot futuro donde exista cupo, con
+    prioridad sobre el resto.
+
+    Solo se planifican cursos con "obligatorio": true (usa
+    `inyectar_prerequisitos_optativos` antes de llamar a esta función si
+    algún optativo es prerequisito de un obligatorio, para que también se
+    incluya). El grafo de prerequisitos se construye con la malla completa
+    recibida, para poder validar cualquier tipo de curso.
+
+    Parameters
+    ----------
+    cursos:
+        Lista completa de cursos de la malla (dict con al menos codigo,
+        nombre, creditos, obligatorio, prerequisitos).
+    aprobados:
+        Códigos de cursos ya aprobados por el estudiante.
+    reprobados:
+        Códigos de cursos que el estudiante cursó y reprobó. Se excluyen
+        de "aprobados" para el cálculo y se priorizan en el primer slot
+        futuro con cupo.
+    limite_creditos:
+        Créditos máximos permitidos por slot, según el promedio del
+        estudiante.
+
+    Returns
+    -------
+    dict[str, list[dict]]
+        {"Semestre_1": [...], "Semestre_2": [...], ...}
+
+    Raises
+    ------
+    RutaOptimaError
+        Si la malla tiene ciclos, si existen cursos bloqueados sin
+        combinación de prerequisitos alcanzable, o si un curso excede por
+        sí solo el límite de créditos.
+    """
+    if limite_creditos <= 0:
+        raise RutaOptimaError("El límite de créditos por slot debe ser mayor a 0.")
+
+    aprobados = set(aprobados or [])
+    reprobados = set(reprobados or [])
+
+    grafo = _construir_grafo(cursos)
+    _validar_sin_ciclos(grafo)
+
+    por_codigo = {curso["codigo"]: curso for curso in cursos}
+
+    # Universo de cursos a planificar: solo obligatorios (tras la posible
+    # inyección de optativos-prerequisito hecha por el caller).
+    objetivo = {
+        codigo for codigo, curso in por_codigo.items() if _es_obligatorio(curso)
+    }
+
+    pendientes = {
+        codigo for codigo in objetivo
+        if codigo not in aprobados or codigo in reprobados
+    }
+    aprobados_acumulado = (aprobados - reprobados) | {
+        codigo for codigo in por_codigo if codigo not in objetivo and codigo in aprobados
+    }
+
+    ruta: dict[str, list[dict]] = {}
+    slot_index = 0
 
     while pendientes:
-        # Capa actual: cursos cuyos prerequisitos ya quedaron resueltos.
-        candidatos = [codigo for codigo in pendientes if prerequisitos_cumplidos(codigo)]
+        slot_index += 1
+        clave = f"Semestre_{slot_index}"
 
-        if not candidatos:
-            # Cuello de botella: quedan cursos pendientes pero ninguno
-            # tiene sus prerequisitos satisfechos. Esto normalmente pasa
-            # cuando un prerequisito depende de un curso optativo o ya
-            # descartado que el estudiante nunca aprobó.
-            return {
-                "advertencia": (
-                    "No se puede continuar la ruta: quedan cursos obligatorios "
-                    "pendientes pero ninguno tiene sus prerequisitos cumplidos. "
-                    "Revisa si falta aprobar un prerequisito (posiblemente un "
-                    "curso optativo o no incluido en la lista de aprobados)."
-                ),
-                "cursos_bloqueados": sorted(pendientes),
-                "ruta_parcial": ruta,
-            }
-
-        # Se ordenan los candidatos disponibles por prioridad (out-degree
-        # descendente) y se van empacando en el semestre actual mientras
-        # quepan en el límite de créditos.
-        candidatos.sort(key=clave_prioridad)
-
-        cursos_del_semestre: List[str] = []
-        creditos_usados = 0
-        for codigo in candidatos:
-            creditos_curso = malla_pendiente[codigo].get("creditos", 0)
-            if creditos_usados + creditos_curso <= limite_creditos_semestre:
-                cursos_del_semestre.append(codigo)
-                creditos_usados += creditos_curso
-
-        # Por el chequeo del paso 5, siempre debería caber al menos un
-        # curso; esta guarda es solo una red de seguridad adicional.
-        if not cursos_del_semestre:
-            return {
-                "advertencia": (
-                    "No fue posible asignar ningún curso disponible dentro del "
-                    "límite de créditos del semestre."
-                ),
-                "cursos_bloqueados": sorted(candidatos),
-                "ruta_parcial": ruta,
-            }
-
-        clave_semestre = f"Semestre_{numero_semestre}"
-        ruta[clave_semestre] = [
-            {
-                "codigo": codigo,
-                "nombre": malla_pendiente[codigo].get("nombre"),
-                "creditos": malla_pendiente[codigo].get("creditos"),
-                "semestre_oficial": malla_pendiente[codigo].get("semestre"),
-            }
-            for codigo in cursos_del_semestre
+        candidatos = [
+            codigo for codigo in pendientes
+            if set(por_codigo[codigo].get("prerequisitos", [])) <= aprobados_acumulado
         ]
 
-        asignados_acumulados.update(cursos_del_semestre)
-        pendientes -= set(cursos_del_semestre)
-        numero_semestre += 1
+        if not candidatos:
+            mensaje = _diagnosticar_bloqueo(pendientes, por_codigo, aprobados_acumulado)
+            raise RutaOptimaError(
+                "No es posible continuar la planificación regular: hay cursos "
+                f"bloqueados sin prerequisitos alcanzables -> {mensaje}"
+            )
+
+        # Prioridad: 1) reprobados (reprogramar cuanto antes), 2) orden de
+        # pénsum ("semestre") como guía suave, 3) mayor cantidad de
+        # créditos primero para aprovechar mejor el cupo del slot.
+        candidatos.sort(key=lambda c: (
+            0 if c in reprobados else 1,
+            por_codigo[c].get("semestre", 99),
+            -por_codigo[c].get("creditos", 0),
+        ))
+
+        creditos_slot = 0
+        seleccionados: list[str] = []
+        for codigo in candidatos:
+            creditos_curso = por_codigo[codigo].get("creditos", 0)
+            if creditos_slot + creditos_curso <= limite_creditos:
+                seleccionados.append(codigo)
+                creditos_slot += creditos_curso
+
+        if not seleccionados:
+            codigo_problema = candidatos[0]
+            raise RutaOptimaError(
+                f"El curso '{codigo_problema}' "
+                f"({por_codigo[codigo_problema].get('creditos', 0)} créditos) "
+                f"excede por sí solo el límite de créditos permitido "
+                f"({limite_creditos}). Ajusta el límite o revisa la malla."
+            )
+
+        ruta[clave] = [por_codigo[codigo] for codigo in seleccionados]
+
+        for codigo in seleccionados:
+            pendientes.discard(codigo)
+            aprobados_acumulado.add(codigo)
+            reprobados.discard(codigo)
 
     return ruta
+
+
+# ---------------------------------------------------------------------------
+# Ruta de vacaciones
+# ---------------------------------------------------------------------------
+
+def _desbloquea_obligatorio_futuro(
+    codigo_optativo: str,
+    grafo: nx.DiGraph,
+    por_codigo: dict[str, dict],
+    aprobados_acumulado: set[str],
+) -> bool:
+    """True si aprobar este optativo abre el paso a algún obligatorio pendiente."""
+    if codigo_optativo not in grafo:
+        return False
+    for sucesor in nx.descendants(grafo, codigo_optativo):
+        if sucesor in aprobados_acumulado:
+            continue
+        if _es_obligatorio(por_codigo[sucesor]):
+            return True
+    return False
+
+
+def calcular_ruta_vacaciones(
+    cursos: list[dict],
+    periodos_vacacionales: list[dict],
+    aprobados: Iterable[str] | None = None,
+    limite_horas_teoricas: float = 4,
+    max_cursos_por_periodo: int = 3,
+) -> dict[str, list[dict]]:
+    """
+    Calcula la ruta de cursos vacacionales.
+
+    Reglas:
+    - El límite de 4 horas se aplica solo a horas teóricas (ver
+      `horas_teoricas_de`, que usa créditos como respaldo cuando la malla
+      no trae horas explícitas); las horas de laboratorio no cuentan para
+      el límite (pero sí se reportan).
+    - Solo se consideran cursos presentes en `cursos_disponibles` de cada
+      periodo del JSON de horarios vacacionales.
+    - Los optativos solo se incluyen si desbloquean (directa o
+      transitivamente) al menos un curso obligatorio aún no aprobado.
+    - Máximo `max_cursos_por_periodo` cursos por periodo vacacional.
+
+    Parameters
+    ----------
+    cursos:
+        Malla curricular completa (para validar prerequisitos y tipo).
+    periodos_vacacionales:
+        Lista de periodos, cada uno con forma
+        {"nombre": str, "cursos_disponibles": [codigo, ...]}
+        (tal como se cargan de data/horarios_vacaciones.json).
+    aprobados:
+        Códigos ya aprobados por el estudiante (acumulado hasta el momento
+        en que arranca el primer periodo vacacional considerado).
+    limite_horas_teoricas:
+        Horas teóricas máximas combinadas por periodo (default 4).
+    max_cursos_por_periodo:
+        Cantidad máxima de cursos por periodo (default 3).
+
+    Returns
+    -------
+    dict[str, list[dict]]
+        {nombre_periodo: [lista_de_cursos]}
+
+    Raises
+    ------
+    RutaOptimaError
+        Si la malla tiene ciclos de prerequisitos.
+    """
+    aprobados_acumulado = set(aprobados or [])
+    por_codigo = {curso["codigo"]: curso for curso in cursos}
+
+    grafo = _construir_grafo(cursos)
+    _validar_sin_ciclos(grafo)
+
+    ruta: dict[str, list[dict]] = {}
+
+    for periodo in periodos_vacacionales:
+        clave = periodo["nombre"]
+        disponibles_json = set(periodo.get("cursos_disponibles", []))
+
+        candidatos = []
+        for codigo in disponibles_json:
+            if codigo not in por_codigo:
+                # Curso publicado en el horario vacacional pero que no
+                # pertenece a esta malla curricular: se ignora.
+                continue
+            if codigo in aprobados_acumulado:
+                continue
+
+            curso = por_codigo[codigo]
+            prereqs_ok = set(curso.get("prerequisitos", [])) <= aprobados_acumulado
+            if not prereqs_ok:
+                continue
+
+            if not _es_obligatorio(curso):
+                if not _desbloquea_obligatorio_futuro(
+                    codigo, grafo, por_codigo, aprobados_acumulado
+                ):
+                    continue
+
+            candidatos.append(codigo)
+
+        # Prioridad: obligatorios antes que optativos habilitantes; dentro
+        # de cada grupo, se favorece a quien más horas teóricas aporta para
+        # aprovechar mejor el límite de 4 horas.
+        candidatos.sort(key=lambda c: (
+            0 if _es_obligatorio(por_codigo[c]) else 1,
+            -horas_teoricas_de(por_codigo[c]),
+        ))
+
+        horas_slot = 0.0
+        seleccionados: list[str] = []
+        for codigo in candidatos:
+            if len(seleccionados) >= max_cursos_por_periodo:
+                break
+            horas = horas_teoricas_de(por_codigo[codigo])
+            if horas_slot + horas <= limite_horas_teoricas:
+                seleccionados.append(codigo)
+                horas_slot += horas
+
+        ruta[clave] = [por_codigo[codigo] for codigo in seleccionados]
+        aprobados_acumulado.update(seleccionados)
+
+    return ruta
+
+
+# ---------------------------------------------------------------------------
+# Utilidad de inyección de optativos-prerequisito
+# ---------------------------------------------------------------------------
+
+def inyectar_prerequisitos_optativos(cursos: list[dict]) -> list[dict]:
+    """
+    Devuelve una COPIA de la malla donde cualquier curso optativo que sea
+    prerequisito -directo o indirecto- de un curso obligatorio queda
+    marcado temporalmente como "obligatorio": true.
+
+    Esto evita que `calcular_ruta_regular` (que solo planifica cursos
+    obligatorios) omita un optativo que en realidad es indispensable para
+    poder cursar un obligatorio posterior.
+    """
+    cursos_copia = [dict(curso) for curso in cursos]
+    por_codigo = {curso["codigo"]: curso for curso in cursos_copia}
+
+    obligatorios_iniciales = [
+        curso["codigo"] for curso in cursos_copia if _es_obligatorio(curso)
+    ]
+
+    marcados: set[str] = set()
+    pila = list(obligatorios_iniciales)
+
+    while pila:
+        actual = pila.pop()
+        curso_actual = por_codigo.get(actual)
+        if curso_actual is None:
+            continue
+        for prereq in curso_actual.get("prerequisitos", []):
+            curso_prereq = por_codigo.get(prereq)
+            if curso_prereq is None:
+                continue
+            if not _es_obligatorio(curso_prereq) and prereq not in marcados:
+                curso_prereq["obligatorio"] = True
+                marcados.add(prereq)
+                pila.append(prereq)
+
+    return cursos_copia

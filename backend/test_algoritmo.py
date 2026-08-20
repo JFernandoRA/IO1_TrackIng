@@ -1,235 +1,561 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 test_algoritmo.py
+==================
+Script de pruebas / demostración para ruta_optima.py.
 
-Script de consola independiente para probar `calcular_ruta_optima`
-(ver ruta_optima.py) directamente sobre las mallas curriculares reales,
-ANTES de integrar el algoritmo a cualquier API o frontend.
+Diseñado para leer las mallas curriculares reales de la Facultad de
+Ingeniería de la USAC (exportadas de redesEstudio), ubicadas en
+backend/data/*.json, con la forma:
 
-Uso:
-    python3 test_algoritmo.py
+    {
+        "carrera": "Ingeniería en Ciencias y Sistemas",
+        "carrera_id": "ingenieriaEnCienciasYSistemas",
+        "pensum": "CLAR",
+        "vigente_desde": 2025,
+        "cursos": [
+            {"codigo": "0101", "nombre": "...", "creditos": 9,
+             "semestre": 1, "prerequisitos": [], "obligatorio": true},
+            ...
+        ]
+    }
 
-Requisitos:
-    - networkx instalado (pip install networkx)
-    - ruta_optima.py en el mismo directorio (o en el PYTHONPATH)
-    - una carpeta "data/" junto a este script con los JSON de mallas
-      curriculares (formato: carrera, carrera_id, pensum, vigente_desde,
-      fuente, total_cursos, cursos: [...])
+Cualquier archivo .json dentro de data/ (excepto horarios_vacaciones.json)
+se trata como una malla curricular seleccionable.
+
+Flujo de main():
+  1. Selección interactiva de malla curricular (data/*.json).
+  2. Solicita el promedio acumulado del usuario (0-100) y calcula el
+     límite de créditos dinámico:
+         > 85            -> 42 créditos
+         71 - 85         -> 37 créditos
+         < 71             -> 32 créditos
+  3. Carga automáticamente data/horarios_vacaciones.json.
+  4. Inyecta como obligatorios temporales cualquier optativo que sea
+     prerequisito de un obligatorio.
+  5. Ejecuta 3 casos de prueba secuenciales:
+       Caso 1: estudiante nuevo (ruta regular + vacaciones intercaladas)
+       Caso 2: estudiante que perdió "Matemática Básica 1" (se busca por
+               nombre en la malla elegida, ya que el código varía entre
+               carreras) -> confirma reprogramación dinámica, no fija a
+               "Semestre_1"
+       Caso 3: estudiante con promedio bajo (<71) -> 32 créditos/slot
+
+Cada caso imprime totales de créditos/horas por periodo y corre
+verificaciones automáticas de prerequisitos y límites.
+
+Compatible con Windows, Python 3.13 y NetworkX 3.6.1. Sin dependencias
+adicionales a las de ruta_optima.py.
 """
+
+from __future__ import annotations
 
 import json
 import os
 import sys
 import unicodedata
 
-from ruta_optima import calcular_ruta_optima, RutaOptimaError
+from ruta_optima import (
+    RutaOptimaError,
+    calcular_ruta_regular,
+    calcular_ruta_vacaciones,
+    horas_laboratorio_de,
+    horas_teoricas_de,
+    inyectar_prerequisitos_optativos,
+)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-LIMITE_CREDITOS_DEFECTO = 25
-
-
-# ---------------------------------------------------------------------
-# Utilidades de carga y presentación
-# ---------------------------------------------------------------------
-
-def normalizar_texto(texto: str) -> str:
-    """minúsculas y sin acentos, para comparar nombres de curso sin líos."""
-    texto = texto.strip().lower()
-    texto = unicodedata.normalize("NFD", texto)
-    return "".join(ch for ch in texto if unicodedata.category(ch) != "Mn")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+ARCHIVO_HORARIOS_VACACIONES = "horarios_vacaciones.json"
 
 
-def listar_archivos_malla() -> list:
+# ---------------------------------------------------------------------------
+# Carga de datos y selección interactiva de malla
+# ---------------------------------------------------------------------------
+
+def cargar_json(ruta: str) -> dict:
+    with open(ruta, "r", encoding="utf-8") as archivo:
+        return json.load(archivo)
+
+
+def listar_mallas_disponibles() -> list[str]:
+    """Todo *.json en data/ es una malla, excepto horarios_vacaciones.json."""
     if not os.path.isdir(DATA_DIR):
-        print(f"\n[ERROR] No se encontró la carpeta de datos en: {DATA_DIR}")
-        print("Coloca los JSON de las mallas curriculares en una carpeta 'data/' "
-              "junto a este script.\n")
-        sys.exit(1)
+        return []
+    return sorted(
+        archivo for archivo in os.listdir(DATA_DIR)
+        if archivo.lower().endswith(".json")
+        and archivo.lower() != ARCHIVO_HORARIOS_VACACIONES
+    )
 
-    archivos = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".json"))
+
+def seleccionar_malla_interactiva() -> tuple[dict, str]:
+    """Mantiene la selección interactiva de mallas curriculares."""
+    archivos = listar_mallas_disponibles()
+
     if not archivos:
-        print(f"\n[ERROR] No hay archivos .json dentro de {DATA_DIR}\n")
-        sys.exit(1)
-    return archivos
+        raise SystemExit(
+            f"No se encontraron archivos .json de mallas en {DATA_DIR} "
+            f"(se excluye '{ARCHIVO_HORARIOS_VACACIONES}'). Coloca al menos "
+            "una malla curricular antes de ejecutar el script."
+        )
 
+    opciones = [(archivo, cargar_json(os.path.join(DATA_DIR, archivo))) for archivo in archivos]
 
-def elegir_malla(archivos: list) -> str:
-    print("\nMallas curriculares disponibles:\n")
-    for i, nombre_archivo in enumerate(archivos, start=1):
-        print(f"  [{i}] {nombre_archivo}")
+    print("\nMallas curriculares disponibles:")
+    for indice, (archivo, malla) in enumerate(opciones, start=1):
+        etiqueta = malla.get("carrera", archivo)
+        pensum = malla.get("pensum")
+        vigente = malla.get("vigente_desde")
+        detalle = f" ({pensum}, {vigente})" if pensum or vigente else ""
+        print(f"  {indice}. {etiqueta}{detalle}  [{archivo}]")
 
     while True:
-        eleccion = input(f"\nElige el número de la carrera a analizar (1-{len(archivos)}): ").strip()
-        if eleccion.isdigit() and 1 <= int(eleccion) <= len(archivos):
-            return archivos[int(eleccion) - 1]
-        print("Entrada inválida, intenta de nuevo.")
+        seleccion = input(f"Selecciona una malla (1-{len(opciones)}): ").strip()
+        if seleccion.isdigit() and 1 <= int(seleccion) <= len(opciones):
+            archivo_elegido, malla = opciones[int(seleccion) - 1]
+            break
+        print("Opción inválida. Intenta de nuevo.")
+
+    print(f"Malla seleccionada: {malla.get('carrera', archivo_elegido)}\n")
+    return malla, archivo_elegido
 
 
-def cargar_malla_como_diccionario(ruta_archivo: str) -> dict:
-    """
-    Convierte el JSON real (con "cursos" como lista) al formato de
-    diccionario código -> curso que espera calcular_ruta_optima.
-    """
-    with open(ruta_archivo, "r", encoding="utf-8") as f:
-        datos = json.load(f)
+# ---------------------------------------------------------------------------
+# Promedio acumulado -> límite de créditos dinámico
+# ---------------------------------------------------------------------------
 
-    malla = {}
-    for curso in datos.get("cursos", []):
-        codigo = str(curso["codigo"]).strip().upper()
-        malla[codigo] = {
-            "codigo": codigo,
-            "nombre": curso["nombre"],
-            "creditos": curso["creditos"],
-            "semestre": curso["semestre"],
-            "prerequisitos": [str(p).strip().upper() for p in curso.get("prerequisitos", [])],
-            "obligatorio": curso.get("obligatorio", True),
-        }
-    return malla, datos.get("carrera", "?")
+def solicitar_promedio_acumulado() -> float:
+    while True:
+        entrada = input("Ingresa tu promedio acumulado (0-100): ").strip()
+        try:
+            promedio = float(entrada)
+        except ValueError:
+            print("Debes ingresar un número. Intenta de nuevo.")
+            continue
+        if 0 <= promedio <= 100:
+            return promedio
+        print("El promedio debe estar entre 0 y 100. Intenta de nuevo.")
 
 
-def encontrar_codigo_matematica_basica_1(malla: dict) -> str:
-    """
-    Busca en semestre 1 un curso obligatorio cuyo nombre sugiera
-    "Matemática Básica 1" (con o sin acentos, variantes de redacción).
-    Si no lo encuentra, cae de vuelta al primer curso obligatorio de
-    semestre 1 como aproximación razonable.
-    """
-    candidatos_semestre_1 = [
-        c for c in malla.values() if c.get("obligatorio", True) and c.get("semestre") == 1
-    ]
+def calcular_limite_creditos(promedio: float) -> int:
+    if promedio > 85:
+        return 42
+    if promedio >= 71:
+        return 37
+    return 32
 
-    for curso in candidatos_semestre_1:
-        nombre_norm = normalizar_texto(curso["nombre"])
-        if "matematica basica 1" in nombre_norm or "matematica basica i" in nombre_norm:
-            return curso["codigo"]
 
-    if candidatos_semestre_1:
-        print(
-            "  (No se encontró un curso llamado exactamente 'Matemática Básica 1'; "
-            f"se usará '{candidatos_semestre_1[0]['nombre']}' como aproximación de "
-            "primer semestre para el caso de prueba.)"
-        )
-        return candidatos_semestre_1[0]["codigo"]
+# ---------------------------------------------------------------------------
+# Búsqueda de cursos por nombre (los códigos varían entre carreras)
+# ---------------------------------------------------------------------------
 
+def _normalizar(texto: str) -> str:
+    texto = (texto or "").lower().strip()
+    return "".join(
+        caracter for caracter in unicodedata.normalize("NFKD", texto)
+        if not unicodedata.combining(caracter)
+    )
+
+
+def buscar_curso_por_nombre(cursos: list[dict], fragmentos_clave: list[str]) -> dict | None:
+    """Primer curso cuyo nombre contenga TODOS los fragmentos (sin acentos/mayúsculas)."""
+    fragmentos = [_normalizar(f) for f in fragmentos_clave]
+    for curso in cursos:
+        nombre = _normalizar(curso.get("nombre", ""))
+        if all(fragmento in nombre for fragmento in fragmentos):
+            return curso
     return None
 
 
-def imprimir_ruta(resultado: dict) -> None:
-    if "advertencia" in resultado:
-        print("\n  ⚠ ADVERTENCIA:", resultado["advertencia"])
-        print("  Cursos involucrados en el bloqueo:", ", ".join(resultado["cursos_bloqueados"]))
-        if resultado.get("ruta_parcial"):
-            print("\n  Ruta parcial calculada antes del bloqueo:")
-            imprimir_ruta(resultado["ruta_parcial"])
+# ---------------------------------------------------------------------------
+# Impresión y verificación de resultados
+# ---------------------------------------------------------------------------
+
+def _totales_periodo(cursos: list[dict]) -> tuple[float, float, float]:
+    creditos = sum(curso.get("creditos", 0) for curso in cursos)
+    horas_teoricas = sum(horas_teoricas_de(curso) for curso in cursos)
+    horas_laboratorio = sum(horas_laboratorio_de(curso) for curso in cursos)
+    return creditos, horas_teoricas, horas_laboratorio
+
+
+def imprimir_ruta(ruta: dict, titulo: str) -> None:
+    print(f"\n--- {titulo} ---")
+    if not ruta:
+        print("  (sin periodos generados)")
         return
 
-    if not resultado:
-        print("\n  ✓ No hay cursos obligatorios pendientes: la ruta ya está completa.")
-        return
-
-    for clave_semestre, cursos in resultado.items():
-        creditos_totales = sum(c["creditos"] for c in cursos)
-        print(f"\n  {clave_semestre}  ({creditos_totales} créditos, {len(cursos)} cursos)")
+    total_creditos_general = 0
+    for clave_periodo, cursos in ruta.items():
+        creditos, horas_teoricas, horas_laboratorio = _totales_periodo(cursos)
+        total_creditos_general += creditos
+        print(f"\n  {clave_periodo}  "
+              f"[creditos={creditos}, horas_teoricas={horas_teoricas}, "
+              f"horas_laboratorio={horas_laboratorio}, cursos={len(cursos)}]")
         for curso in cursos:
-            print(f"    - [{curso['codigo']}] {curso['nombre']} "
-                  f"({curso['creditos']} cr., semestre oficial {curso['semestre_oficial']})")
+            marca = "obligatorio" if curso.get("obligatorio", True) else "optativo"
+            print(f"    - {curso['codigo']:<6} {curso.get('nombre', ''):<45} "
+                  f"cred={curso.get('creditos', 0):<3} "
+                  f"teo~={horas_teoricas_de(curso):<4} "
+                  f"lab={horas_laboratorio_de(curso):<3} "
+                  f"({marca})")
+    print(f"\n  Total de créditos planificados: {total_creditos_general}")
 
-    print(f"\n  Total de semestres necesarios: {len(resultado)}")
+
+def verificar_prerequisitos(ruta: dict, malla_cursos: list[dict],
+                             aprobados_iniciales: set[str] | None = None) -> list[str]:
+    """
+    Recorre la ruta periodo por periodo y confirma que ningún curso se
+    programó sin tener sus prerequisitos satisfechos por periodos
+    anteriores (o por lo ya aprobado al inicio).
+    """
+    por_codigo = {curso["codigo"]: curso for curso in malla_cursos}
+    aprobados_acumulado = set(aprobados_iniciales or [])
+    violaciones = []
+
+    for clave_periodo, cursos in ruta.items():
+        for curso in cursos:
+            prereqs = set(por_codigo.get(curso["codigo"], curso).get("prerequisitos", []))
+            faltantes = prereqs - aprobados_acumulado
+            if faltantes:
+                violaciones.append(
+                    f"{clave_periodo}: '{curso['codigo']}' programado sin "
+                    f"cumplir prerequisitos {sorted(faltantes)}"
+                )
+        for curso in cursos:
+            aprobados_acumulado.add(curso["codigo"])
+
+    return violaciones
 
 
-def contar_optativos(malla: dict) -> int:
-    return sum(1 for c in malla.values() if not c.get("obligatorio", True))
+def verificar_limite_creditos(ruta: dict, limite_creditos: int) -> list[str]:
+    violaciones = []
+    for clave_periodo, cursos in ruta.items():
+        creditos = sum(curso.get("creditos", 0) for curso in cursos)
+        if creditos > limite_creditos:
+            violaciones.append(
+                f"{clave_periodo}: {creditos} créditos excede el límite de "
+                f"{limite_creditos}"
+            )
+    return violaciones
 
 
-# ---------------------------------------------------------------------
+def verificar_limite_vacaciones(ruta: dict, limite_horas_teoricas: float = 4,
+                                 max_cursos: int = 3) -> list[str]:
+    violaciones = []
+    for clave_periodo, cursos in ruta.items():
+        horas_teoricas = sum(horas_teoricas_de(curso) for curso in cursos)
+        if horas_teoricas > limite_horas_teoricas:
+            violaciones.append(
+                f"{clave_periodo}: {horas_teoricas} horas teóricas excede el "
+                f"límite de {limite_horas_teoricas}"
+            )
+        if len(cursos) > max_cursos:
+            violaciones.append(
+                f"{clave_periodo}: {len(cursos)} cursos excede el máximo de "
+                f"{max_cursos} por periodo vacacional"
+            )
+    return violaciones
+
+
+def imprimir_verificaciones(etiqueta: str, violaciones: list[str]) -> None:
+    if violaciones:
+        print(f"  [ERROR] {etiqueta}: se encontraron {len(violaciones)} violación(es):")
+        for violacion in violaciones:
+            print(f"    - {violacion}")
+    else:
+        print(f"  [OK] {etiqueta}: sin violaciones.")
+
+
+# ---------------------------------------------------------------------------
+# Ruta intercalada (regular + vacaciones), orquestada a nivel de script
+# ---------------------------------------------------------------------------
+
+def construir_ruta_intercalada(
+    malla_inyectada: list[dict],
+    periodos_vacacionales: list[dict],
+    limite_creditos: int,
+    aprobados_iniciales: set[str] | None = None,
+    reprobados_iniciales: set[str] | None = None,
+    aplicar_vacaciones_cada_n_semestres: int = 2,
+) -> dict:
+    """
+    Intercala periodos vacacionales dentro de la ruta regular llamando a
+    ambas funciones de forma independiente y combinando sus resultados
+    (ambas retornan la misma estructura {clave: [cursos]}, por lo que se
+    pueden fusionar directamente en un solo diccionario ordenado).
+    """
+    aprobados = set(aprobados_iniciales or [])
+    reprobados = set(reprobados_iniciales or [])
+    ruta_combinada: dict[str, list[dict]] = {}
+
+    semestre_num = 0
+    vac_idx = 0
+
+    while True:
+        pendientes_obligatorios = {
+            curso["codigo"] for curso in malla_inyectada
+            if curso.get("obligatorio", True)
+            and (curso["codigo"] not in aprobados or curso["codigo"] in reprobados)
+        }
+        if not pendientes_obligatorios:
+            break
+
+        semestre_num += 1
+        # Se recalcula la ruta regular completa con el estado actual y se
+        # toma solo el primer slot resultante: así cada nuevo semestre
+        # aprovecha lo que ya se adelantó en vacaciones.
+        parcial = calcular_ruta_regular(
+            malla_inyectada,
+            aprobados=aprobados,
+            reprobados=reprobados,
+            limite_creditos=limite_creditos,
+        )
+        primera_clave = next(iter(parcial))
+        cursos_semestre = parcial[primera_clave]
+        clave_final = f"Semestre_{semestre_num}"
+        ruta_combinada[clave_final] = cursos_semestre
+
+        for curso in cursos_semestre:
+            aprobados.add(curso["codigo"])
+            reprobados.discard(curso["codigo"])
+
+        if (semestre_num % aplicar_vacaciones_cada_n_semestres == 0
+                and vac_idx < len(periodos_vacacionales)):
+            periodo = periodos_vacacionales[vac_idx]
+            vac_idx += 1
+            resultado_vac = calcular_ruta_vacaciones(
+                malla_inyectada, [periodo], aprobados=aprobados
+            )
+            clave_vac = next(iter(resultado_vac))
+            ruta_combinada[clave_vac] = resultado_vac[clave_vac]
+            for curso in resultado_vac[clave_vac]:
+                aprobados.add(curso["codigo"])
+
+    return ruta_combinada
+
+
+# ---------------------------------------------------------------------------
 # Casos de prueba
-# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-def caso_estudiante_nuevo(malla: dict, limite_creditos: int) -> None:
+def caso_1_estudiante_nuevo(malla_inyectada, periodos_vacacionales, limite_creditos):
     print("\n" + "=" * 70)
-    print("CASO 1: Estudiante nuevo (0 cursos aprobados)")
+    print("CASO 1: Estudiante nuevo (ruta regular + vacaciones intercaladas)")
     print("=" * 70)
-    print("Objetivo: validar la ruta base completa desde el primer semestre.")
 
-    resultado = calcular_ruta_optima([], malla, limite_creditos)
-    imprimir_ruta(resultado)
-
-
-def caso_perdio_matematica_1(malla: dict, limite_creditos: int) -> None:
-    print("\n" + "=" * 70)
-    print("CASO 2: Estudiante que perdió Matemática Básica 1 pero aprobó")
-    print("        las demás materias de primer semestre")
-    print("=" * 70)
-    print("Objetivo: validar que la ruta reordena y respeta el prerequisito")
-    print("          faltante en vez de intentar avanzar de forma inválida.")
-
-    codigo_mate1 = encontrar_codigo_matematica_basica_1(malla)
-    if codigo_mate1 is None:
-        print("\n  (No hay cursos obligatorios de semestre 1 en esta malla; se omite este caso.)")
+    try:
+        ruta = construir_ruta_intercalada(
+            malla_inyectada, periodos_vacacionales, limite_creditos,
+            aprobados_iniciales=set(), reprobados_iniciales=set(),
+        )
+    except RutaOptimaError as error:
+        print(f"  [ERROR] No se pudo calcular la ruta: {error}")
         return
 
-    aprobados = [
-        c["codigo"]
-        for c in malla.values()
-        if c.get("obligatorio", True) and c.get("semestre") == 1 and c["codigo"] != codigo_mate1
-    ]
+    imprimir_ruta(ruta, "Ruta intercalada (regular + vacaciones)")
 
-    print(f"\n  Curso NO aprobado (reprobado): {codigo_mate1} "
-          f"({malla[codigo_mate1]['nombre']})")
-    print(f"  Cursos aprobados de primer semestre: {', '.join(aprobados) if aprobados else '(ninguno más)'}")
+    violaciones_prereq = verificar_prerequisitos(ruta, malla_inyectada)
+    imprimir_verificaciones("Prerequisitos", violaciones_prereq)
 
-    resultado = calcular_ruta_optima(aprobados, malla, limite_creditos)
-    imprimir_ruta(resultado)
-
-    # Verificación visual rápida: el curso reprobado debe seguir
-    # apareciendo en la ruta, y cualquier curso que dependa de él NO
-    # debería aparecer antes que él.
-    if "advertencia" not in resultado:
-        semestre_de_mate1 = None
-        for clave_semestre, cursos in resultado.items():
-            if any(c["codigo"] == codigo_mate1 for c in cursos):
-                semestre_de_mate1 = clave_semestre
-                break
-        if semestre_de_mate1:
-            print(f"\n  ✓ Verificación: '{codigo_mate1}' fue reprogramado en {semestre_de_mate1}, "
-                  "como corresponde al no estar aprobado.")
-        else:
-            print(f"\n  ⚠ Verificación: '{codigo_mate1}' no aparece en ningún semestre de la ruta "
-                  "(revisar lógica).")
+    # Los periodos "Semestre_*" respetan limite_creditos; el resto (los
+    # periodos vacacionales, cualquiera sea su nombre) respeta el límite
+    # de horas teóricas y máximo de cursos.
+    claves_semestre = {clave: cursos for clave, cursos in ruta.items()
+                        if clave.startswith("Semestre_")}
+    claves_vacaciones = {clave: cursos for clave, cursos in ruta.items()
+                          if not clave.startswith("Semestre_")}
+    imprimir_verificaciones(
+        "Límite de créditos (semestres)",
+        verificar_limite_creditos(claves_semestre, limite_creditos),
+    )
+    imprimir_verificaciones(
+        "Límite de horas / cursos (vacaciones)",
+        verificar_limite_vacaciones(claves_vacaciones),
+    )
 
 
-# ---------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------
+def caso_2_perdio_matematica_basica_1(malla_inyectada, limite_creditos):
+    print("\n" + "=" * 70)
+    print("CASO 2: Estudiante que perdió 'Matemática Básica 1'")
+    print("=" * 70)
 
-def main():
-    print("TrackIng — banco de pruebas del algoritmo de ruta óptima")
-    print("(ejecución local, sin API ni frontend)\n")
+    # El código varía entre carreras, así que el curso se busca por
+    # nombre dentro de la malla elegida en tiempo de ejecución.
+    curso_objetivo = buscar_curso_por_nombre(
+        malla_inyectada, ["matematica", "basica", "1"]
+    )
+    if curso_objetivo is None:
+        candidatos_sem1 = [
+            c for c in malla_inyectada
+            if c.get("semestre") == 1 and c.get("obligatorio", True)
+        ]
+        if not candidatos_sem1:
+            print("  [ERROR] No se encontró un curso de primer semestre en "
+                  "esta malla para simular la reprobación.")
+            return
+        curso_objetivo = candidatos_sem1[0]
+        print(f"  (No se encontró 'Matemática Básica 1' por nombre; se usa "
+              f"'{curso_objetivo['nombre']}' como sustituto de primer "
+              "semestre.)")
 
-    archivos = listar_archivos_malla()
-    archivo_elegido = elegir_malla(archivos)
-    ruta_completa = os.path.join(DATA_DIR, archivo_elegido)
+    codigo_objetivo = curso_objetivo["codigo"]
+    semestre_objetivo = curso_objetivo.get("semestre", 1)
+    print(f"  Curso simulado como reprobado: '{codigo_objetivo}' - "
+          f"{curso_objetivo['nombre']} (semestre oficial {semestre_objetivo})")
+
+    # El estudiante ya aprobó el resto de cursos obligatorios de ese mismo
+    # semestre oficial, pero reprobó el curso objetivo.
+    aprobados = {
+        c["codigo"] for c in malla_inyectada
+        if c.get("semestre") == semestre_objetivo
+        and c.get("obligatorio", True)
+        and c["codigo"] != codigo_objetivo
+    }
+    reprobados = {codigo_objetivo}
 
     try:
-        malla, nombre_carrera = cargar_malla_como_diccionario(ruta_completa)
-    except (KeyError, json.JSONDecodeError) as e:
-        print(f"\n[ERROR] El archivo '{archivo_elegido}' no tiene el formato esperado: {e}")
-        sys.exit(1)
+        ruta = calcular_ruta_regular(
+            malla_inyectada,
+            aprobados=aprobados,
+            reprobados=reprobados,
+            limite_creditos=limite_creditos,
+        )
+    except RutaOptimaError as error:
+        print(f"  [ERROR] No se pudo calcular la ruta: {error}")
+        return
 
-    total_obligatorios = sum(1 for c in malla.values() if c.get("obligatorio", True))
-    total_optativos = contar_optativos(malla)
+    imprimir_ruta(ruta, "Ruta regular con reprogramación dinámica")
 
-    print(f"\nCarrera seleccionada: {nombre_carrera}")
-    print(f"Total de cursos en la malla: {len(malla)} "
-          f"({total_obligatorios} obligatorios, {total_optativos} optativos)")
-    print(f"Límite de créditos por semestre usado en las pruebas: {LIMITE_CREDITOS_DEFECTO}")
+    primer_slot_con_objetivo = next(
+        (clave for clave, cursos in ruta.items()
+         if any(curso["codigo"] == codigo_objetivo for curso in cursos)),
+        None,
+    )
+    if primer_slot_con_objetivo:
+        print(f"\n  Verificación de reprogramación: '{codigo_objetivo}' se "
+              f"reprogramó en '{primer_slot_con_objetivo}' (el primer slot "
+              "futuro con cupo disponible, no un 'Semestre_1' fijo por "
+              "pénsum oficial).")
+    else:
+        print(f"\n  [ERROR] '{codigo_objetivo}' no aparece en la ruta recalculada.")
+
+    violaciones_prereq = verificar_prerequisitos(
+        ruta, malla_inyectada, aprobados_iniciales=aprobados
+    )
+    imprimir_verificaciones("Prerequisitos", violaciones_prereq)
+    imprimir_verificaciones(
+        "Límite de créditos", verificar_limite_creditos(ruta, limite_creditos)
+    )
+
+
+def caso_3_promedio_bajo(malla_inyectada):
+    print("\n" + "=" * 70)
+    print("CASO 3: Estudiante con promedio bajo (<71 -> 32 créditos por slot)")
+    print("=" * 70)
+
+    limite_bajo = calcular_limite_creditos(50.0)  # 50 < 71 -> 32 créditos
+    limite_alto = calcular_limite_creditos(90.0)  # referencia para comparar
 
     try:
-        caso_estudiante_nuevo(malla, LIMITE_CREDITOS_DEFECTO)
-        caso_perdio_matematica_1(malla, LIMITE_CREDITOS_DEFECTO)
-    except RutaOptimaError as e:
-        print(f"\n[ERROR de validación de entrada] {e}")
-        sys.exit(1)
+        ruta_bajo = calcular_ruta_regular(
+            malla_inyectada, aprobados=set(), reprobados=set(),
+            limite_creditos=limite_bajo,
+        )
+        ruta_alto = calcular_ruta_regular(
+            malla_inyectada, aprobados=set(), reprobados=set(),
+            limite_creditos=limite_alto,
+        )
+    except RutaOptimaError as error:
+        print(f"  [ERROR] No se pudo calcular la ruta: {error}")
+        return
+
+    imprimir_ruta(ruta_bajo, f"Ruta regular con límite bajo ({limite_bajo} créditos)")
+
+    print(f"\n  Comparación de semestres necesarios:")
+    print(f"    - Límite {limite_bajo} créditos (<71 de promedio): "
+          f"{len(ruta_bajo)} semestres")
+    print(f"    - Límite {limite_alto} créditos (>85 de promedio, referencia): "
+          f"{len(ruta_alto)} semestres")
+
+    if len(ruta_bajo) >= len(ruta_alto):
+        print("  [OK] El límite más bajo generó igual o más semestres, "
+              "como se esperaba.")
+    else:
+        print("  [ERROR] El límite más bajo generó menos semestres que el "
+              "límite alto; esto no debería ocurrir.")
+
+    violaciones_prereq = verificar_prerequisitos(ruta_bajo, malla_inyectada)
+    imprimir_verificaciones("Prerequisitos", violaciones_prereq)
+
+    violaciones_limite = verificar_limite_creditos(ruta_bajo, limite_bajo)
+    imprimir_verificaciones(f"Límite de créditos ({limite_bajo})", violaciones_limite)
+
+    # "Óptimo" en este contexto: se revisa cuánto del cupo de cada slot se
+    # usa en promedio, como indicador de que no se desperdicia capacidad
+    # de forma sistemática.
+    print("  Verificación de optimalidad (uso de cupo por slot):")
+    total_slots = len(ruta_bajo)
+    creditos_usados = sum(
+        sum(curso.get("creditos", 0) for curso in cursos)
+        for cursos in ruta_bajo.values()
+    )
+    capacidad_total = total_slots * limite_bajo
+    porcentaje_uso = (creditos_usados / capacidad_total * 100) if capacidad_total else 0
+    print(f"    - Uso promedio de capacidad por slot: {porcentaje_uso:.1f}% "
+          f"({creditos_usados}/{capacidad_total} créditos)")
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    print("=" * 70)
+    print("TrackIng - Pruebas de ruta_optima.py")
+    print("=" * 70)
+
+    # 1) Selección interactiva de malla curricular (se mantiene intacta).
+    malla_json, _archivo_malla = seleccionar_malla_interactiva()
+    cursos_malla = malla_json["cursos"]
+
+    # 2) Promedio acumulado -> límite de créditos dinámico.
+    promedio = solicitar_promedio_acumulado()
+    limite_creditos = calcular_limite_creditos(promedio)
+    print(f"\nPromedio ingresado: {promedio:.2f}")
+    print(f"Límite de créditos asignado para esta ejecución: {limite_creditos} "
+          "créditos por semestre.\n")
+
+    # 3) Carga automática de horarios vacacionales desde data/.
+    ruta_horarios = os.path.join(DATA_DIR, ARCHIVO_HORARIOS_VACACIONES)
+    if not os.path.isfile(ruta_horarios):
+        raise SystemExit(
+            f"No se encontró '{ARCHIVO_HORARIOS_VACACIONES}' en {DATA_DIR}."
+        )
+    horarios_vacaciones = cargar_json(ruta_horarios)
+    periodos_vacacionales = horarios_vacaciones.get("periodos", [])
+    print(f"Periodos vacacionales cargados: "
+          f"{[p['nombre'] for p in periodos_vacacionales]}")
+
+    # 4) Inyectar optativos-prerequisito como obligatorios temporales.
+    malla_inyectada = inyectar_prerequisitos_optativos(cursos_malla)
+    codigos_obligatorios_originales = {
+        curso["codigo"] for curso in cursos_malla if curso.get("obligatorio", True)
+    }
+    codigos_inyectados = {
+        curso["codigo"] for curso in malla_inyectada if curso.get("obligatorio", True)
+    } - codigos_obligatorios_originales
+    if codigos_inyectados:
+        print(f"Optativos inyectados como obligatorios temporales "
+              f"(son prerequisito de un obligatorio): {sorted(codigos_inyectados)}")
+    else:
+        print("No hay optativos que deban inyectarse como obligatorios temporales "
+              "en esta malla.")
+
+    # 5) Tres casos de prueba secuenciales.
+    caso_1_estudiante_nuevo(malla_inyectada, periodos_vacacionales, limite_creditos)
+    caso_2_perdio_matematica_basica_1(malla_inyectada, limite_creditos)
+    caso_3_promedio_bajo(malla_inyectada)
 
     print("\n" + "=" * 70)
     print("Fin de las pruebas.")
@@ -237,4 +563,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit("\nEjecución cancelada por el usuario.")
