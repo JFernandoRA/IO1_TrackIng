@@ -115,9 +115,7 @@
       "nombre": "Dibujo Computarizado",
       "creditos": 4,
       "semestre": 2,
-      "prerequisitos": [
-        "0610"
-      ],
+      "prerequisitos": [],
       "obligatorio": false
     },
     {

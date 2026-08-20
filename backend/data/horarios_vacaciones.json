@@ -1,26 +1,614 @@
 {
-  "periodo": "Vacaciones 2026-1",
-  "cursos": [
-    {
-      "codigo": "0101",
-      "nombre": "Área Matemática Básica 1",
-      "horas": 4,
-      "es_laboratorio": false,
-      "secciones_disponibles": ["L-M 8-12", "M-J 14-18"]
-    },
-    {
-      "codigo": "LAB_PROG101",
-      "nombre": "Laboratorio de Programación",
-      "horas": 2,
-      "es_laboratorio": true,
-      "secciones_disponibles": ["V 8-10"]
-    },
-    {
-      "codigo": "0005",
-      "nombre": "Técnicas de Estudio e Investigación",
-      "horas": 2,
-      "es_laboratorio": false,
-      "secciones_disponibles": ["L-V 10-12"]
-    }
-  ]
+  "_comentario": "Cursos disponibles en vacaciones (periodo general, aplica para ambos ciclos de vacaciones). Horas obtenidas del horario real de la sección teórica principal (Sección A u otra sección teórica) publicado en https://usuarios.ingenieria.usac.edu.gt/horarios/vacaciones/1. Regla de la Facultad: la mayoría de cursos vacacionales dura 2 horas teóricas semanales, excepto Área Matemática Básica 1 (0101), Área Matemática Básica 2 (0103) y Área Matemática Intermedia 1 (0107), que duran 4 horas cada una. El límite por periodo es 4 horas teóricas y máximo 3 cursos.",
+  "periodo": {
+    "nombre": "Vacaciones 2026",
+    "cursos_disponibles": [
+      {
+        "codigo": "0006",
+        "nombre": "Idioma Tecnico 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0008",
+        "nombre": "Idioma Tecnico 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0009",
+        "nombre": "Idioma Tecnico 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0011",
+        "nombre": "Idioma Tecnico 4",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0028",
+        "nombre": "Ecologia",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0092",
+        "nombre": "Programacion De Computadoras 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0101",
+        "nombre": "Area Matematica Basica 1",
+        "horas_teoricas": 4,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0103",
+        "nombre": "Area Matematica Basica 2",
+        "horas_teoricas": 4,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0107",
+        "nombre": "Area Matematica Intermedia 1",
+        "horas_teoricas": 4,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0112",
+        "nombre": "Area Matematica Intermedia 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0114",
+        "nombre": "Area Matematica Intermedia 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0116",
+        "nombre": "Matematica Aplicada 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0118",
+        "nombre": "Matematica Aplicada 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0147",
+        "nombre": "Fisica Basica",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0150",
+        "nombre": "Fisica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0152",
+        "nombre": "Fisica 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0170",
+        "nombre": "Mecanica Analitica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0172",
+        "nombre": "Mecanica Analitica 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0212",
+        "nombre": "Conversion De Energia Electromecanica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0216",
+        "nombre": "Subestaciones",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0218",
+        "nombre": "Lineas De Transmision",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0244",
+        "nombre": "Comunicaciones 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0246",
+        "nombre": "Electronica 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0249",
+        "nombre": "Electronica 6",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0252",
+        "nombre": "Hidraulica",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0258",
+        "nombre": "Maquinas Hidraulicas",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0281",
+        "nombre": "Sistemas Operativos 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0282",
+        "nombre": "Ingenieria Sanitaria 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0283",
+        "nombre": "Analisis Y Diseño De Sistemas 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0285",
+        "nombre": "Sistemas Operativos 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0286",
+        "nombre": "Hidraulica De Canales",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0300",
+        "nombre": "Resistencia De Materiales 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0311",
+        "nombre": "Analisis Estructural",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0314",
+        "nombre": "Concreto Armado 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0318",
+        "nombre": "Cimentaciones 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0320",
+        "nombre": "Cimentaciones 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0332",
+        "nombre": "Puentes",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0354",
+        "nombre": "Quimica 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0358",
+        "nombre": "Quimica Organica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0362",
+        "nombre": "Analisis Cualitativo",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0390",
+        "nombre": "Termodinamica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0392",
+        "nombre": "Termodinamica 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0410",
+        "nombre": "Balance De Masa Y Energia",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0418",
+        "nombre": "Iq-5 Transferencia De Masa En Unidades Continuas",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0436",
+        "nombre": "Diseño De Equipo",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0460",
+        "nombre": "Pavimentos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0486",
+        "nombre": "Diseño De Plantas",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0506",
+        "nombre": "Plantas De Vapor",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0508",
+        "nombre": "Montaje Y Mantenimiento De Equipo",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0510",
+        "nombre": "Instalaciones Mecanicas",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0522",
+        "nombre": "Procesos De Manufactura 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0524",
+        "nombre": "Diseño De Maquinas 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0526",
+        "nombre": "Diseño De Maquinas 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0528",
+        "nombre": "Diseño De Maquinas 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0532",
+        "nombre": "Vibraciones",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0601",
+        "nombre": "Investigacion De Operaciones I",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0603",
+        "nombre": "Investigacion De Operaciones Ii",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0630",
+        "nombre": "Ingenieria De La Produccion",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0634",
+        "nombre": "Ingenieria De Metodos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0640",
+        "nombre": "Control De La Produccion",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0642",
+        "nombre": "Seguridad E Higiene Industrial",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0643",
+        "nombre": "Salud Y Seguridad Ocupacional",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0653",
+        "nombre": "Ingenieria De Costos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0654",
+        "nombre": "Contabilidad 3",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0656",
+        "nombre": "Administracion De Empresas 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0660",
+        "nombre": "Mercadotecnia 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0662",
+        "nombre": "Legislacion 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0664",
+        "nombre": "Legislacion 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0665",
+        "nombre": "Microeconomia",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0666",
+        "nombre": "Costos Presupuestos Y Avaluos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0670",
+        "nombre": "Legislacion Ambiental 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0700",
+        "nombre": "Ingenieria Economica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0706",
+        "nombre": "Preparacion Y Evaluacion De Proyectos 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0708",
+        "nombre": "Preparacion Y Evaluacion De Proyectos 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0720",
+        "nombre": "Modelacion Y Simulacion 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0722",
+        "nombre": "Teoria De Sistemas 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0724",
+        "nombre": "Teoria De Sistemas 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0729",
+        "nombre": "Modelacion Y Simulacion 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0732",
+        "nombre": "Estadistica 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0734",
+        "nombre": "Estadistica 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0736",
+        "nombre": "Analisis Probabilistico",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0768",
+        "nombre": "Introduccion A Los Algoritmos Y Flujo De Datos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0770",
+        "nombre": "Introduccion A La Programacion Y Computacion 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0771",
+        "nombre": "Introduccion A La Programacion Y Computacion 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0772",
+        "nombre": "Estructuras De Datos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0773",
+        "nombre": "Manejo E Implementacion De Archivos",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0775",
+        "nombre": "Sistemas De Bases De Datos 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0777",
+        "nombre": "Organizacion De Lenguajes Y Compiladores 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0778",
+        "nombre": "Arquitectura De Computadores Y Ensambladores 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0780",
+        "nombre": "Software Avanzado",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0781",
+        "nombre": "Organizacion De Lenguajes Y Compiladores 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0785",
+        "nombre": "Analisis Y Diseño De Sistemas 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0787",
+        "nombre": "Sistemas Organizacionales Y Gerenciales 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0796",
+        "nombre": "Lenguajes Formales Y De Programacion",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0798",
+        "nombre": "Seminario De Sistemas 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0960",
+        "nombre": "Matematica Para Computacion 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0964",
+        "nombre": "Organizacion Computacional",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0970",
+        "nombre": "Redes De Computadoras 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0972",
+        "nombre": "Inteligencia Artificial 1",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "0975",
+        "nombre": "Redes De Computadoras 2",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      },
+      {
+        "codigo": "7905",
+        "nombre": "Seminario De Investigacion Industrial",
+        "horas_teoricas": 2,
+        "horas_laboratorio": 0
+      }
+    ]
+  }
 }
