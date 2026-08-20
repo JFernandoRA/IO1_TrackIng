@@ -267,11 +267,15 @@ def calcular_ruta_regular(
 
         # Prioridad: 1) reprobados (reprogramar cuanto antes), 2) orden de
         # pénsum ("semestre") como guía suave, 3) mayor cantidad de
-        # créditos primero para aprovechar mejor el cupo del slot.
+        # créditos primero para aprovechar mejor el cupo del slot, 4)
+        # código como desempate final puramente determinista (evita que
+        # el resultado cambie de una ejecución a otra cuando hay empates
+        # reales en semestre y créditos).
         candidatos.sort(key=lambda c: (
             0 if c in reprobados else 1,
             por_codigo[c].get("semestre", 99),
             -por_codigo[c].get("creditos", 0),
+            c,
         ))
 
         creditos_slot = 0
@@ -391,20 +395,23 @@ def calcular_ruta_vacaciones(
         # curso vacacional ("codigo", "horas_teoricas", "horas_laboratorio").
         # Esto último tiene prioridad sobre la aproximación por créditos.
         horas_reales: dict[str, tuple[float, float]] = {}
-        disponibles_json: set[str] = set()
+        disponibles_json: list[str] = []
+        vistos: set[str] = set()
         for entrada in periodo.get("cursos_disponibles", []):
             if isinstance(entrada, dict):
                 codigo = entrada.get("codigo")
                 if codigo is None:
                     continue
-                disponibles_json.add(codigo)
                 if entrada.get("horas_teoricas") is not None or entrada.get("horas_laboratorio") is not None:
                     horas_reales[codigo] = (
                         entrada.get("horas_teoricas", 0) or 0,
                         entrada.get("horas_laboratorio", 0) or 0,
                     )
             else:
-                disponibles_json.add(entrada)
+                codigo = entrada
+            if codigo not in vistos:
+                vistos.add(codigo)
+                disponibles_json.append(codigo)
 
         def _horas_teoricas_periodo(codigo: str) -> float:
             if codigo in horas_reales:
@@ -438,12 +445,17 @@ def calcular_ruta_vacaciones(
 
             candidatos.append(codigo)
 
-        # Prioridad: obligatorios antes que optativos habilitantes; dentro
-        # de cada grupo, se favorece a quien más horas teóricas aporta para
-        # aprovechar mejor el límite de 4 horas.
+        # Prioridad: (1) obligatorios antes que optativos habilitantes;
+        # (2) el que más horas teóricas aporta, para aprovechar mejor el
+        # límite de 4 horas; (3) el de semestre oficial más bajo, para
+        # priorizar lo más atrasado/antiguo en el pénsum; (4) código, como
+        # desempate final puramente determinista (evita que el resultado
+        # cambie de una ejecución a otra cuando hay empates reales).
         candidatos.sort(key=lambda c: (
             0 if _es_obligatorio(por_codigo[c]) else 1,
             -_horas_teoricas_periodo(c),
+            por_codigo[c].get("semestre", 0),
+            c,
         ))
 
         horas_slot = 0.0
@@ -475,25 +487,32 @@ def calcular_ruta_vacaciones(
 
 
 # ---------------------------------------------------------------------------
-# Plan del próximo año (2 semestres + 2 periodos vacacionales)
+# Plan hasta el cierre de la carrera (todos los semestres que faltan)
 # ---------------------------------------------------------------------------
 
 MODOS_PLAN_ANUAL = {"avanzar", "nivelarse", "tiempo_normal"}
 """
 - "avanzar":       usa siempre el límite máximo de créditos que permite el
                     promedio, para cerrar la carrera lo antes posible.
-- "nivelarse":      igual que "avanzar" en cupo (usa el máximo permitido),
-                    pero además reporta si con eso alcanza a ponerse al día
-                    con los cursos atrasados dentro del horizonte de 1 año,
-                    o solo se acerca lo más posible.
+- "nivelarse":      igual que "avanzar" en cupo (usa el máximo permitido);
+                    la diferencia frente a "avanzar" es solo de mensaje /
+                    interpretación, ya que maximizar créditos priorizando
+                    siempre lo más atrasado primero es simultáneamente la
+                    forma más rápida de graduarse Y de ponerse al día.
 - "tiempo_normal":  no adelanta más allá de la carga oficial del pénsum para
                     el semestre que le toca (no se "adelanta" aunque el
-                    promedio le permitiría más), salvo lo necesario para no
-                    seguir atrasándose.
+                    promedio le permitiría más). Si el estudiante va
+                    atrasado, este modo sí puede resultar en semestres
+                    adicionales al cierre normal, porque nunca sobrecarga
+                    para recuperar el atraso más rápido.
 """
 
+MAX_SEMESTRES_SEGURIDAD = 40
+"""Límite de seguridad para detectar mallas con bloqueos irresolubles en
+vez de quedar en un ciclo infinito."""
 
-def calcular_plan_proximo_anio(
+
+def calcular_plan_restante(
     cursos: list[dict],
     periodos_vacacionales: list[dict],
     semestre_actual: int,
@@ -503,14 +522,14 @@ def calcular_plan_proximo_anio(
     modo: str = "nivelarse",
 ) -> dict:
     """
-    Arma el plan de los próximos 4 periodos a partir de dónde va el
-    estudiante: Semestre, Vacaciones, Semestre, Vacaciones (2 semestres +
-    2 periodos vacacionales, en ese orden intercalado).
+    Arma el plan completo desde donde va el estudiante hasta el cierre de
+    la carrera: Semestre, Vacaciones, Semestre, Vacaciones, ... hasta que
+    ya no queden cursos obligatorios pendientes. Si el estudiante va
+    atrasado y el límite de créditos no alcanza para nivelarse dentro de
+    la duración normal del pénsum, el plan simplemente sigue agregando los
+    semestres adicionales que hagan falta hasta cerrar.
 
-    Es una capa sobre `calcular_ruta_regular` / `calcular_ruta_vacaciones`
-    pensada para responder directamente la pregunta "¿qué debo llevar el
-    próximo año?", en vez de tener que armar la ruta completa hasta el
-    cierre de la carrera.
+    Es una capa sobre `calcular_ruta_regular` / `calcular_ruta_vacaciones`.
 
     Parameters
     ----------
@@ -519,16 +538,15 @@ def calcular_plan_proximo_anio(
         antes de llamar a esta función si aplica, igual que con
         `calcular_ruta_regular`).
     periodos_vacacionales:
-        Periodos vacacionales disponibles, en el orden en que ocurrirán;
-        se toman como máximo los primeros 2 (uno después de cada semestre
-        planificado). Ver `calcular_ruta_vacaciones` para el formato.
+        Periodos vacacionales disponibles, en el orden en que ocurrirán
+        (uno después de cada semestre planificado, mientras sigan quedando
+        cursos pendientes y haya periodos disponibles en la lista). Ver
+        `calcular_ruta_vacaciones` para el formato.
     semestre_actual:
         Semestre oficial del pénsum en el que va el estudiante ahora mismo
-        (se usa solo para: (a) nombrar los slots resultantes, y (b)
-        determinar qué cursos obligatorios de semestres ANTERIORES a este
-        están "atrasados" si no aparecen en `aprobados`; los cursos del
-        propio `semestre_actual` no cuentan como atraso, ya que se asume
-        que el estudiante los está cursando/por cursar ahora).
+        (se usa para: (a) nombrar los slots resultantes, y (b) determinar
+        qué cursos obligatorios de semestres ANTERIORES a este están
+        "atrasados" si no aparecen en `aprobados`).
     aprobados:
         Códigos de cursos que el estudiante ya tiene ganados.
     reprobados:
@@ -543,20 +561,29 @@ def calcular_plan_proximo_anio(
     Returns
     -------
     dict con:
-        "periodos": {clave_periodo: [cursos]} en orden cronológico.
+        "periodos": {clave_periodo: [cursos]} en orden cronológico, hasta
+            el cierre de la carrera.
         "atrasados_iniciales": cursos obligatorios de semestre ANTERIOR a
             semestre_actual que el estudiante NO tiene ganados al arrancar.
-        "atrasados_restantes": subconjunto de los anteriores que siguen
-            sin ganarse al final del plan de 1 año.
-        "nivelado": True si "atrasados_restantes" quedó vacío, es decir,
-            si en este horizonte de 1 año alcanzó a ponerse al día.
+        "duracion_normal_pensum": último semestre oficial que declara la
+            malla para cursos obligatorios (p. ej. 10).
+        "semestres_cursados": cantidad de semestres (sin contar
+            vacaciones) que se planificaron en este plan.
+        "semestre_estimado_cierre": número de semestre en el que el plan
+            proyecta que el estudiante se gradúa
+            (semestre_actual + semestres_cursados - 1).
+        "semestres_extra": cuántos semestres por encima de la duración
+            normal del pénsum haría falta cursar (0 si cierra a tiempo o
+            antes).
         "modo": el modo usado.
 
     Raises
     ------
     RutaOptimaError
-        Si `modo` no es válido, o por las mismas razones que
-        `calcular_ruta_regular` / `calcular_ruta_vacaciones`.
+        Si `modo` no es válido, si el plan supera
+        `MAX_SEMESTRES_SEGURIDAD` (probable bloqueo irresoluble en la
+        malla), o por las mismas razones que `calcular_ruta_regular` /
+        `calcular_ruta_vacaciones`.
     """
     if modo not in MODOS_PLAN_ANUAL:
         raise RutaOptimaError(
@@ -576,6 +603,18 @@ def calcular_plan_proximo_anio(
         and (codigo not in aprob_actual or codigo in reprob_actual)
     )
 
+    duracion_normal_pensum = max(
+        (curso.get("semestre", 0) for curso in cursos if _es_obligatorio(curso)),
+        default=semestre_actual,
+    )
+
+    def _pendientes_obligatorios() -> set[str]:
+        return {
+            curso["codigo"] for curso in cursos
+            if _es_obligatorio(curso)
+            and (curso["codigo"] not in aprob_actual or curso["codigo"] in reprob_actual)
+        }
+
     def _creditos_oficiales_semestre(semestre_oficial: int) -> int:
         return sum(
             curso.get("creditos", 0) for curso in cursos
@@ -585,15 +624,16 @@ def calcular_plan_proximo_anio(
     periodos_out: dict[str, list[dict]] = {}
     semestre_oficial_objetivo = semestre_actual
     vac_idx = 0
+    indice_semestre = 0
 
-    for indice_semestre in range(2):
-        pendientes_obligatorios = {
-            curso["codigo"] for curso in cursos
-            if _es_obligatorio(curso)
-            and (curso["codigo"] not in aprob_actual or curso["codigo"] in reprob_actual)
-        }
-        if not pendientes_obligatorios:
-            break  # ya no quedan cursos obligatorios: la carrera se cierra antes.
+    while _pendientes_obligatorios():
+        if indice_semestre >= MAX_SEMESTRES_SEGURIDAD:
+            raise RutaOptimaError(
+                "El plan superó el límite de seguridad de "
+                f"{MAX_SEMESTRES_SEGURIDAD} semestres sin lograr cerrar la "
+                "carrera; probablemente hay un bloqueo irresoluble en la "
+                "malla (revisa prerequisitos huérfanos o ciclos)."
+            )
 
         limite_efectivo = limite_creditos
         if modo == "tiempo_normal":
@@ -612,12 +652,15 @@ def calcular_plan_proximo_anio(
         cursos_semestre = parcial[primera_clave]
         clave_final = f"Semestre_{semestre_actual + indice_semestre}"
         periodos_out[clave_final] = cursos_semestre
+        indice_semestre += 1
 
         for curso in cursos_semestre:
             aprob_actual.add(curso["codigo"])
             reprob_actual.discard(curso["codigo"])
 
-        if vac_idx < len(periodos_vacacionales):
+        # Solo se agrega vacación si aún queda algo pendiente (no tiene
+        # sentido un periodo vacacional después de la última materia).
+        if _pendientes_obligatorios() and vac_idx < len(periodos_vacacionales):
             periodo = periodos_vacacionales[vac_idx]
             vac_idx += 1
             resultado_vac = calcular_ruta_vacaciones(
@@ -628,15 +671,16 @@ def calcular_plan_proximo_anio(
             for curso in resultado_vac[clave_vac]:
                 aprob_actual.add(curso["codigo"])
 
-    atrasados_restantes = sorted(
-        codigo for codigo in atrasados_iniciales if codigo not in aprob_actual
-    )
+    semestre_estimado_cierre = semestre_actual + indice_semestre - 1
+    semestres_extra = max(0, semestre_estimado_cierre - duracion_normal_pensum)
 
     return {
         "periodos": periodos_out,
         "atrasados_iniciales": atrasados_iniciales,
-        "atrasados_restantes": atrasados_restantes,
-        "nivelado": len(atrasados_restantes) == 0,
+        "duracion_normal_pensum": duracion_normal_pensum,
+        "semestres_cursados": indice_semestre,
+        "semestre_estimado_cierre": semestre_estimado_cierre,
+        "semestres_extra": semestres_extra,
         "modo": modo,
     }
 

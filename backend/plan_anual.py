@@ -2,13 +2,17 @@
 """
 plan_anual.py
 =============
-Script de consola: "¿qué cursos debo llevar el próximo año?"
+Script de consola: "¿qué cursos me faltan para cerrar la carrera?"
 
 A diferencia de test_algoritmo.py (que corre 3 casos de demostración ya
 armados), este script es INTERACTIVO: pregunta directamente los datos del
-estudiante y entrega la ruta de los próximos 4 periodos (2 semestres +
-2 periodos vacacionales, intercalados: Semestre, Vacaciones, Semestre,
-Vacaciones), calculada con calcular_plan_proximo_anio() de ruta_optima.py.
+estudiante y entrega la ruta COMPLETA desde el semestre en el que va hasta
+el cierre de la carrera (Semestre, Vacaciones, Semestre, Vacaciones, ...),
+calculada con calcular_plan_restante() de ruta_optima.py. Si el estudiante
+va atrasado y el límite de créditos de su promedio no alcanza para
+ponerse al día dentro de la duración normal del pénsum, el plan
+simplemente agrega los semestres adicionales que hagan falta y al final
+se informa cuántos son.
 
 Flujo:
   1. Elegir carrera (malla curricular en data/*.json).
@@ -24,8 +28,9 @@ Flujo:
   6. Elegir el objetivo: adelantarte, nivelarte, o mantener el tiempo
      normal de cierre de la carrera.
 
-Salida: la ruta de los próximos 4 periodos impresa en consola, más un
-resumen de si con ese plan alcanzas a ponerte al día o no.
+Salida: la ruta completa hasta el cierre impresa en consola, más un
+resumen de en qué semestre proyecta que te gradúas y cuántos semestres
+extra (si aplica) por encima de la duración normal del pénsum.
 
 Ejecutar con:  python plan_anual.py
 """
@@ -36,7 +41,7 @@ import sys
 
 from ruta_optima import (
     RutaOptimaError,
-    calcular_plan_proximo_anio,
+    calcular_plan_restante,
     inyectar_prerequisitos_optativos,
     sanear_aprobados_por_prerequisitos,
 )
@@ -122,7 +127,7 @@ def solicitar_cursos_por_nombre(cursos: list[dict], instruccion: str) -> set[str
 
 
 def solicitar_modo() -> str:
-    print("\n¿Cuál es tu objetivo para este próximo año?")
+    print("\n¿Cuál es tu objetivo para lo que resta de la carrera?")
     for clave, (_modo, descripcion) in MODOS_MENU.items():
         print(f"  {clave}. {descripcion}")
     while True:
@@ -142,7 +147,6 @@ def imprimir_resumen(plan: dict, por_codigo: dict[str, dict], semestre_actual: i
     print("=" * 70)
 
     atrasados_iniciales = plan["atrasados_iniciales"]
-    atrasados_restantes = plan["atrasados_restantes"]
 
     if not atrasados_iniciales:
         print(f"  Ibas al día con el pénsum hasta el semestre {semestre_actual}: "
@@ -156,21 +160,23 @@ def imprimir_resumen(plan: dict, por_codigo: dict[str, dict], semestre_actual: i
         for nombre in nombres_iniciales:
             print(f"    - {nombre}")
 
-        if plan["nivelado"]:
-            print("\n  [OK] Con este plan de 1 año SÍ alcanzas a ponerte al día: "
-                  "todos los cursos atrasados quedan cubiertos.")
-        else:
-            nombres_restantes = [
-                f"{codigo} - {por_codigo[codigo]['nombre']}" for codigo in atrasados_restantes
-            ]
-            print(f"\n  [!] Con este plan de 1 año NO alcanzas a ponerte al día del todo. "
-                  f"Quedan pendientes ({len(atrasados_restantes)} de "
-                  f"{len(atrasados_iniciales)}):")
-            for nombre in nombres_restantes:
-                print(f"    - {nombre}")
-            print("  Aun así, este es el plan que más te acerca a nivelarte dentro del "
-                  "límite de créditos que te permite tu promedio; seguirás recuperando "
-                  "terreno en los periodos siguientes.")
+    duracion_normal = plan["duracion_normal_pensum"]
+    semestre_cierre = plan["semestre_estimado_cierre"]
+    semestres_extra = plan["semestres_extra"]
+
+    print(f"\n  Duración normal del pénsum: {duracion_normal} semestres.")
+    print(f"  Semestres a cursar desde ahora: {plan['semestres_cursados']} "
+          f"(proyecta cierre en el semestre {semestre_cierre}).")
+
+    if semestres_extra == 0:
+        print("\n  [OK] Con este plan cierras la carrera dentro del tiempo normal "
+              "del pénsum (o antes).")
+    else:
+        plural = "semestre" if semestres_extra == 1 else "semestres"
+        print(f"\n  [!] Con este plan NO alcanzas a cerrar en el tiempo normal: "
+              f"necesitarás {semestres_extra} {plural} adicional(es) por encima "
+              f"de los {duracion_normal} semestres oficiales del pénsum, dado el "
+              "atraso actual y el límite de créditos que te permite tu promedio.")
 
     modo_legible = {
         "avanzar": "adelantarte y cerrar antes de tiempo",
@@ -186,7 +192,7 @@ def imprimir_resumen(plan: dict, por_codigo: dict[str, dict], semestre_actual: i
 
 def main() -> None:
     print("=" * 70)
-    print("TrackIng - Plan del próximo año")
+    print("TrackIng - Plan hasta el cierre de la carrera")
     print("=" * 70)
 
     # 1) Carrera. Se inyectan de una vez los prerequisitos de los
@@ -252,12 +258,13 @@ def main() -> None:
     # 6) Objetivo
     modo = solicitar_modo()
 
-    # 7) Periodos vacacionales
+    # 7) Periodos vacacionales (se piden de sobra: la carrera restante
+    # puede necesitar más de 2 ciclos si el estudiante va muy atrasado).
     periodos_vacacionales = cargar_periodos_vacacionales()
 
-    # 8) Calcular el plan
+    # 8) Calcular el plan hasta el cierre de la carrera
     try:
-        plan = calcular_plan_proximo_anio(
+        plan = calcular_plan_restante(
             cursos_malla,
             periodos_vacacionales,
             semestre_actual=semestre_actual,
@@ -270,7 +277,7 @@ def main() -> None:
         print(f"\n[ERROR] No se pudo calcular el plan: {error}")
         return
 
-    imprimir_ruta(plan["periodos"], "Plan del próximo año (2 semestres + 2 vacaciones)")
+    imprimir_ruta(plan["periodos"], "Plan hasta el cierre de la carrera")
     imprimir_resumen(plan, por_codigo, semestre_actual)
 
     print("\n" + "=" * 70)

@@ -76,7 +76,7 @@ def seleccionar_malla_interactiva() -> tuple[dict, str]:
     return malla, archivo_elegido
 
 
-def cargar_periodos_vacacionales() -> list[dict]:
+def cargar_periodos_vacacionales(cantidad: int = 30) -> list[dict]:
     """
     Carga data/horarios_vacaciones.json y retorna la lista de periodos
     vacacionales a usar en el plan (en orden cronológico).
@@ -87,10 +87,13 @@ def cargar_periodos_vacacionales() -> list[dict]:
       reutiliza para cada ciclo de vacaciones que haga falta planificar
       (mismo catálogo de cursos disponible en cualquier vacación, ya que
       la oferta vacacional de la Facultad no cambia de un ciclo a otro).
-      Se etiqueta cada copia como "<nombre> (ciclo 1)", "(ciclo 2)", etc.
+      Se generan `cantidad` copias etiquetadas "<nombre> (ciclo 1)",
+      "(ciclo 2)", etc. — de sobra para cualquier plan, incluso uno que
+      cubra toda la carrera restante con varios semestres de atraso.
     - Antiguo: una lista ya armada en la clave "periodos", cada una con
       su propio "nombre" y "cursos_disponibles" (por si en algún momento
-      sí se quiere declarar un catálogo distinto por ciclo).
+      sí se quiere declarar un catálogo distinto por ciclo). En este caso
+      se retorna tal cual, sin importar `cantidad`.
     """
     ruta_horarios = os.path.join(DATA_DIR, ARCHIVO_HORARIOS_VACACIONES)
     if not os.path.isfile(ruta_horarios):
@@ -104,8 +107,8 @@ def cargar_periodos_vacacionales() -> list[dict]:
         nombre_base = periodo_base.get("nombre", "Vacaciones")
         cursos_disponibles = periodo_base.get("cursos_disponibles", [])
         return [
-            {"nombre": f"{nombre_base} (ciclo 1)", "cursos_disponibles": cursos_disponibles},
-            {"nombre": f"{nombre_base} (ciclo 2)", "cursos_disponibles": cursos_disponibles},
+            {"nombre": f"{nombre_base} (ciclo {i})", "cursos_disponibles": cursos_disponibles}
+            for i in range(1, cantidad + 1)
         ]
 
     return datos.get("periodos", [])

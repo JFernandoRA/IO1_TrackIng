@@ -395,8 +395,9 @@ def main() -> None:
 
     # 3) Carga automática de horarios vacacionales desde data/.
     periodos_vacacionales = cargar_periodos_vacacionales()
-    print(f"Periodos vacacionales cargados: "
-          f"{[p['nombre'] for p in periodos_vacacionales]}")
+    print(f"Periodos vacacionales cargados: {len(periodos_vacacionales)} ciclos "
+          f"disponibles (ej. '{periodos_vacacionales[0]['nombre']}')."
+          if periodos_vacacionales else "Periodos vacacionales cargados: ninguno.")
 
     # 4) Inyectar optativos-prerequisito como obligatorios temporales.
     malla_inyectada = inyectar_prerequisitos_optativos(cursos_malla)
