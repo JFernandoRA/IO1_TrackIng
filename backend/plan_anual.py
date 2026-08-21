@@ -38,6 +38,7 @@ from ruta_optima import (
     RutaOptimaError,
     calcular_plan_proximo_anio,
     inyectar_prerequisitos_optativos,
+    sanear_aprobados_por_prerequisitos,
 )
 from utilidades import (
     buscar_cursos_por_fragmento,
@@ -188,9 +189,13 @@ def main() -> None:
     print("TrackIng - Plan del próximo año")
     print("=" * 70)
 
-    # 1) Carrera
+    # 1) Carrera. Se inyectan de una vez los prerequisitos de los
+    # optativos habilitantes, y de ahí en adelante se trabaja SIEMPRE
+    # sobre esta versión de la malla (así los códigos y prerequisitos son
+    # consistentes en todos los pasos: búsqueda, saneamiento y cálculo).
     malla_json, _archivo_malla = seleccionar_malla_interactiva()
-    cursos_malla = malla_json["cursos"]
+    cursos_malla = inyectar_prerequisitos_optativos(malla_json["cursos"])
+    por_codigo = {curso["codigo"]: curso for curso in cursos_malla}
 
     # 2) Semestre actual
     semestre_actual = solicitar_semestre_actual(cursos_malla)
@@ -219,6 +224,25 @@ def main() -> None:
     aprobados |= adelantados
     reprobados -= adelantados
 
+    # 4.5) Saneamiento por arrastre de prerequisitos: el paso 2 asume que
+    # todo lo anterior al semestre actual está ganado, pero eso es
+    # inconsistente si el curso reprobado/pendiente tiene postrequisitos
+    # que "numéricamente" caen en un semestre anterior al actual. Por
+    # ejemplo, si perdiste Física 1 o Matemática Intermedia 3, tampoco
+    # pudiste haber ganado Física 2, Matemática Aplicada 1, ni nada que
+    # dependa de esos cursos, aunque su "semestre" oficial sea menor al
+    # semestre en el que vas ahora. Esto se corrige de forma transitiva.
+    aprobados, removidos_por_arrastre = sanear_aprobados_por_prerequisitos(
+        cursos_malla, aprobados
+    )
+    if removidos_por_arrastre:
+        print("\n[!] Por arrastre de prerequisitos, tampoco tendrías ganados "
+              "estos cursos (dependen directa o indirectamente de algo que "
+              "aún no ganas), aunque sean de un semestre anterior al actual:")
+        for codigo in sorted(removidos_por_arrastre):
+            curso = por_codigo.get(codigo, {})
+            print(f"    - {codigo} - {curso.get('nombre', '(desconocido)')}")
+
     # 5) Promedio -> límite de créditos
     promedio = solicitar_promedio_acumulado()
     limite_creditos = calcular_limite_creditos(promedio)
@@ -228,15 +252,13 @@ def main() -> None:
     # 6) Objetivo
     modo = solicitar_modo()
 
-    # 7) Preparar malla (inyectar optativos-prerequisito) y periodos vacacionales
-    malla_inyectada = inyectar_prerequisitos_optativos(cursos_malla)
-    por_codigo = {curso["codigo"]: curso for curso in malla_inyectada}
+    # 7) Periodos vacacionales
     periodos_vacacionales = cargar_periodos_vacacionales()
 
     # 8) Calcular el plan
     try:
         plan = calcular_plan_proximo_anio(
-            malla_inyectada,
+            cursos_malla,
             periodos_vacacionales,
             semestre_actual=semestre_actual,
             aprobados=aprobados,

@@ -642,6 +642,78 @@ def calcular_plan_proximo_anio(
 
 
 # ---------------------------------------------------------------------------
+# Saneamiento de "aprobados" por arrastre de prerequisitos
+# ---------------------------------------------------------------------------
+
+def sanear_aprobados_por_prerequisitos(
+    cursos: list[dict],
+    aprobados: Iterable[str],
+) -> tuple[set[str], set[str]]:
+    """
+    Depura un conjunto de cursos "aprobados" declarados, quitando
+    cualquier curso cuyo(s) prerequisito(s) no estén también (transitiva
+    y consistentemente) dentro de ese mismo conjunto.
+
+    Esto existe porque, al planificar, es común asumir automáticamente
+    "ya ganó todo lo de semestres anteriores al actual" y solo pedirle al
+    estudiante que indique lo que perdió (p. ej. Física 1, Intermedia 3).
+    Esa asunción por sí sola es inconsistente: si el estudiante nunca ganó
+    Intermedia 3, tampoco pudo haber ganado ningún curso que la requiera
+    como prerequisito (p. ej. Matemática Aplicada 1), ni lo que dependa de
+    ESE curso (p. ej. Teoría de Sistemas 1), aunque esos cursos
+    "numéricamente" pertenezcan a un semestre anterior al actual.
+
+    El cálculo es de punto fijo: un curso solo se considera realmente
+    aprobado si TODOS sus prerequisitos también quedaron dentro del
+    conjunto consistente (y así sucesivamente hacia atrás en la cadena).
+
+    Parameters
+    ----------
+    cursos:
+        Malla curricular completa.
+    aprobados:
+        Códigos que se habían declarado/asumido como aprobados.
+
+    Returns
+    -------
+    (aprobados_consistentes, removidos_por_arrastre)
+        aprobados_consistentes: subconjunto de `aprobados` que sí es
+            alcanzable respetando la cadena de prerequisitos.
+        removidos_por_arrastre: los códigos que se quitaron de
+            `aprobados` porque dependían, directa o indirectamente, de un
+            curso que no está en `aprobados`.
+    """
+    por_codigo = {curso["codigo"]: curso for curso in cursos}
+    declarados = set(aprobados)
+
+    aprobados_consistentes: set[str] = set()
+    pendientes_por_validar = set(declarados)
+
+    while True:
+        agregado_este_ciclo = False
+        for codigo in list(pendientes_por_validar):
+            curso = por_codigo.get(codigo)
+            if curso is None:
+                # Código declarado que no pertenece a esta malla: se ignora.
+                pendientes_por_validar.discard(codigo)
+                continue
+            prerequisitos = set(curso.get("prerequisitos", []))
+            # Solo exigimos que los prerequisitos que sí forman parte de
+            # esta malla estén satisfechos (evita falsos negativos si un
+            # prerequisito referenciado no existe en el archivo).
+            prerequisitos_relevantes = {p for p in prerequisitos if p in por_codigo}
+            if prerequisitos_relevantes <= aprobados_consistentes:
+                aprobados_consistentes.add(codigo)
+                pendientes_por_validar.discard(codigo)
+                agregado_este_ciclo = True
+        if not agregado_este_ciclo:
+            break
+
+    removidos_por_arrastre = declarados - aprobados_consistentes
+    return aprobados_consistentes, removidos_por_arrastre
+
+
+# ---------------------------------------------------------------------------
 # Utilidad de inyección de optativos-prerequisito
 # ---------------------------------------------------------------------------
 
