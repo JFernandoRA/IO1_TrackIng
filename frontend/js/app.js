@@ -68,6 +68,7 @@ async function seleccionarCarrera(carrera) {
   const respuesta = await fetch(`/api/malla/${carrera.archivo}`);
   state.malla = await respuesta.json();
   state.cursos = state.malla.cursos;
+  state.dependientesDirectos = construirDependientesDirectos(state.cursos);
 
   tituloFormulario.textContent = `${state.malla.carrera} · ${state.malla.pensum} ${state.malla.vigente_desde}`;
   construirSelectSemestre();
@@ -106,6 +107,35 @@ function recalcularMarcadosPorDefecto() {
   );
 }
 
+// Mapa codigo -> [codigos de cursos que lo tienen como prerequisito directo].
+// Se usa para, al desmarcar un curso, encontrar en cadena todo lo que
+// dependía de él (igual que hace el backend en sanear_aprobados_por_prerequisitos,
+// pero aquí de forma inmediata mientras el usuario marca/desmarca).
+function construirDependientesDirectos(cursos) {
+  const mapa = new Map();
+  cursos.forEach(curso => {
+    (curso.prerequisitos || []).forEach(prereq => {
+      if (!mapa.has(prereq)) mapa.set(prereq, []);
+      mapa.get(prereq).push(curso.codigo);
+    });
+  });
+  return mapa;
+}
+
+// Todos los cursos que dependen de `codigo`, directa o indirectamente
+// (recorrido en el grafo de dependientes).
+function obtenerDependientesTransitivos(codigo) {
+  const visitados = new Set();
+  const pila = [...(state.dependientesDirectos.get(codigo) || [])];
+  while (pila.length > 0) {
+    const actual = pila.pop();
+    if (visitados.has(actual)) continue;
+    visitados.add(actual);
+    (state.dependientesDirectos.get(actual) || []).forEach(dep => pila.push(dep));
+  }
+  return visitados;
+}
+
 function renderizarGridCursos() {
   gridCursos.innerHTML = "";
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
@@ -135,7 +165,7 @@ function renderizarGridCursos() {
 
         bloque.appendChild(codigo);
         bloque.appendChild(nombre);
-        bloque.addEventListener("click", () => alternarMarcado(curso.codigo, bloque));
+        bloque.addEventListener("click", () => alternarMarcado(curso.codigo));
 
         columna.appendChild(bloque);
       });
@@ -144,16 +174,18 @@ function renderizarGridCursos() {
   });
 }
 
-function alternarMarcado(codigo, bloque) {
+function alternarMarcado(codigo) {
   if (state.marcados.has(codigo)) {
+    // Al desmarcar, se arrastra en cascada: cualquier curso que dependía
+    // (directa o indirectamente) de este ya no puede darse por ganado.
     state.marcados.delete(codigo);
-    bloque.classList.remove("curso-marcado");
-    bloque.classList.add("curso-pendiente");
+    obtenerDependientesTransitivos(codigo).forEach(dep => state.marcados.delete(dep));
   } else {
     state.marcados.add(codigo);
-    bloque.classList.remove("curso-pendiente");
-    bloque.classList.add("curso-marcado");
   }
+  // Se re-renderiza toda la grilla (no solo el bloque clickeado) porque la
+  // cascada puede haber cambiado el estado visual de varios cursos a la vez.
+  renderizarGridCursos();
 }
 
 function renderizarOpcionesModo() {

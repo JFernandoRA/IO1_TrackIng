@@ -658,8 +658,6 @@ def calcular_plan_restante(
             aprob_actual.add(curso["codigo"])
             reprob_actual.discard(curso["codigo"])
 
-        # Solo se agrega vacación si aún queda algo pendiente (no tiene
-        # sentido un periodo vacacional después de la última materia).
         if _pendientes_obligatorios() and vac_idx < len(periodos_vacacionales):
             periodo = periodos_vacacionales[vac_idx]
             vac_idx += 1
@@ -670,6 +668,7 @@ def calcular_plan_restante(
             periodos_out[clave_vac] = resultado_vac[clave_vac]
             for curso in resultado_vac[clave_vac]:
                 aprob_actual.add(curso["codigo"])
+                reprob_actual.discard(curso["codigo"])
 
     semestre_estimado_cierre = semestre_actual + indice_semestre - 1
     semestres_extra = max(0, semestre_estimado_cierre - duracion_normal_pensum)
@@ -683,11 +682,6 @@ def calcular_plan_restante(
         "semestres_extra": semestres_extra,
         "modo": modo,
     }
-
-
-# ---------------------------------------------------------------------------
-# Saneamiento de "aprobados" por arrastre de prerequisitos
-# ---------------------------------------------------------------------------
 
 def sanear_aprobados_por_prerequisitos(
     cursos: list[dict],
@@ -738,13 +732,9 @@ def sanear_aprobados_por_prerequisitos(
         for codigo in list(pendientes_por_validar):
             curso = por_codigo.get(codigo)
             if curso is None:
-                # Código declarado que no pertenece a esta malla: se ignora.
                 pendientes_por_validar.discard(codigo)
                 continue
             prerequisitos = set(curso.get("prerequisitos", []))
-            # Solo exigimos que los prerequisitos que sí forman parte de
-            # esta malla estén satisfechos (evita falsos negativos si un
-            # prerequisito referenciado no existe en el archivo).
             prerequisitos_relevantes = {p for p in prerequisitos if p in por_codigo}
             if prerequisitos_relevantes <= aprobados_consistentes:
                 aprobados_consistentes.add(codigo)
@@ -755,11 +745,6 @@ def sanear_aprobados_por_prerequisitos(
 
     removidos_por_arrastre = declarados - aprobados_consistentes
     return aprobados_consistentes, removidos_por_arrastre
-
-
-# ---------------------------------------------------------------------------
-# Utilidad de inyección de optativos-prerequisito
-# ---------------------------------------------------------------------------
 
 def inyectar_prerequisitos_optativos(cursos: list[dict]) -> list[dict]:
     """
