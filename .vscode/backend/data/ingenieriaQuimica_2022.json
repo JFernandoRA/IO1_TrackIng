@@ -1,0 +1,832 @@
+{
+  "carrera": "Ingeniería Química",
+  "carrera_id": "ingenieriaQuimica",
+  "pensum": "CLAR",
+  "vigente_desde": 2022,
+  "fuente": "https://redesestudio.ingenieria.usac.edu.gt/redesDeEstudio/ingenieriaQuimica/19/clar",
+  "total_cursos": 80,
+  "cursos": [
+    {
+      "codigo": "0017",
+      "nombre": "Área Social Humanística 1",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0069",
+      "nombre": "Área Técnica Complementaria 1",
+      "creditos": 4,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0101",
+      "nombre": "Área Matemática Básica 1",
+      "creditos": 9,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0354",
+      "nombre": "Química 3",
+      "creditos": 6,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0027",
+      "nombre": "Biología",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0039",
+      "nombre": "Deportes 1",
+      "creditos": 2,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0371",
+      "nombre": "Introducción a la Ingeniería Química",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0005",
+      "nombre": "Técnicas de Estudio e Investigación",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0019",
+      "nombre": "Área Social Humanística 2",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [
+        "0017"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0103",
+      "nombre": "Área Matemática Básica 2",
+      "creditos": 9,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0147",
+      "nombre": "Física Básica",
+      "creditos": 5,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0356",
+      "nombre": "Química 4",
+      "creditos": 6,
+      "semestre": 2,
+      "prerequisitos": [
+        "0354"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0075",
+      "nombre": "Dibujo Computarizado",
+      "creditos": 4,
+      "semestre": 2,
+      "prerequisitos": [],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0028",
+      "nombre": "Ecología",
+      "creditos": 4,
+      "semestre": 3,
+      "prerequisitos": [
+        "0356"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0107",
+      "nombre": "Área Matemática Intermedia 1",
+      "creditos": 9,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0150",
+      "nombre": "Física 1",
+      "creditos": 5,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103",
+        "0147"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0358",
+      "nombre": "Química Orgánica 1",
+      "creditos": 6,
+      "semestre": 3,
+      "prerequisitos": [
+        "0356"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0362",
+      "nombre": "Análisis Cualitativo",
+      "creditos": 6,
+      "semestre": 3,
+      "prerequisitos": [
+        "0356"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2025",
+      "nombre": "Prácticas Iniciales",
+      "creditos": 0,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0112",
+      "nombre": "Área Matemática Intermedia 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0114",
+      "nombre": "Área Matemática Intermedia 3",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0152",
+      "nombre": "Física 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0360",
+      "nombre": "Química Orgánica 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0358"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0364",
+      "nombre": "Análisis Cuantitativo",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0362"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0116",
+      "nombre": "Matemática Aplicada 3",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0114"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0118",
+      "nombre": "Matemática Aplicada 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0114"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0380",
+      "nombre": "Físico Química 1",
+      "creditos": 6,
+      "semestre": 5,
+      "prerequisitos": [
+        "0356",
+        "0114"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0410",
+      "nombre": "Balance de Masa y Energía",
+      "creditos": 6,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0356"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0732",
+      "nombre": "Estadística 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0107",
+        "0005"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0001",
+      "nombre": "Ética Profesional",
+      "creditos": 2,
+      "semestre": 5,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0010",
+      "nombre": "Lógica",
+      "creditos": 1,
+      "semestre": 5,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0018",
+      "nombre": "Filosofía de la Ciencia",
+      "creditos": 1,
+      "semestre": 5,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0370",
+      "nombre": "Química Ambiental",
+      "creditos": 3,
+      "semestre": 6,
+      "prerequisitos": [
+        "0028",
+        "0380"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0382",
+      "nombre": "Físico Química 2",
+      "creditos": 6,
+      "semestre": 6,
+      "prerequisitos": [
+        "0380"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0386",
+      "nombre": "Laboratorio de Físico Química 1",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0380"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0412",
+      "nombre": "Flujo de Fluidos",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0118",
+        "0380",
+        "0410"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0440",
+      "nombre": "Microbiología",
+      "creditos": 6,
+      "semestre": 6,
+      "prerequisitos": [
+        "0360",
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0022",
+      "nombre": "Psicología Industrial",
+      "creditos": 3,
+      "semestre": 6,
+      "prerequisitos": [
+        "0732"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0040",
+      "nombre": "Deportes 2",
+      "creditos": 2,
+      "semestre": 6,
+      "prerequisitos": [
+        "0039"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0361",
+      "nombre": "Bioquímica 1",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0360"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0366",
+      "nombre": "Análisis Instrumental",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0364",
+        "0360"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0388",
+      "nombre": "Laboratorio de Físico Química 2",
+      "creditos": 5,
+      "semestre": 7,
+      "prerequisitos": [
+        "0386"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0394",
+      "nombre": "Termodinámica 3",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0382"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0414",
+      "nombre": "IQ-3 Transferencia de Calor",
+      "creditos": 5,
+      "semestre": 7,
+      "prerequisitos": [
+        "0116",
+        "0412"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0630",
+      "nombre": "Ingeniería de la Producción",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0412"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0672",
+      "nombre": "Fundamentos de Administración",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0412"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2036",
+      "nombre": "Prácticas Intermedias",
+      "creditos": 0,
+      "semestre": 7,
+      "prerequisitos": [
+        "2025",
+        "0364",
+        "0412"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0368",
+      "nombre": "Principios de Metrología",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0732",
+        "0152",
+        "0354"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0419",
+      "nombre": "Gestión de la Innovación y la Tecnología en la Industria",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0412"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0435",
+      "nombre": "Recursos y Procesos de Centro América",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0412"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0472",
+      "nombre": "Tecnología de los Alimentos",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0361",
+        "0412"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0396",
+      "nombre": "Termodinámica 4",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0394"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0416",
+      "nombre": "IQ-4 Transferencia de Masa",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0388",
+        "0414"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0428",
+      "nombre": "Laboratorio de Ingeniería Química 1",
+      "creditos": 5,
+      "semestre": 8,
+      "prerequisitos": [
+        "0388",
+        "0414"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0700",
+      "nombre": "Ingeniería Económica 1",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0198",
+      "nombre": "Calidad del Agua",
+      "creditos": 5,
+      "semestre": 8,
+      "prerequisitos": [
+        "0440"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0200",
+      "nombre": "Ingeniería Eléctrica 1",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0114",
+        "0152"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0437",
+      "nombre": "Control de Contaminantes Industriales",
+      "creditos": 3,
+      "semestre": 8,
+      "prerequisitos": [
+        "0370",
+        "0394",
+        "0414"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0482",
+      "nombre": "Operaciones y Procesos en la Industria Farmacéutica",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0414"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0643",
+      "nombre": "Salud y Seguridad Ocupacional",
+      "creditos": 5,
+      "semestre": 8,
+      "prerequisitos": [
+        "0440"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0659",
+      "nombre": "Administración de Recursos Humanos",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0022"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0398",
+      "nombre": "Cinética de Procesos Químicos",
+      "creditos": 6,
+      "semestre": 9,
+      "prerequisitos": [
+        "0396",
+        "0416"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0418",
+      "nombre": "IQ-5 Transferencia de Masa en Unidades Continuas",
+      "creditos": 5,
+      "semestre": 9,
+      "prerequisitos": [
+        "0416",
+        "0428"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0430",
+      "nombre": "Laboratorio de Ingeniería Química 2",
+      "creditos": 6,
+      "semestre": 9,
+      "prerequisitos": [
+        "0416",
+        "0428"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0704",
+      "nombre": "Ingeniería Económica 3",
+      "creditos": 5,
+      "semestre": 9,
+      "prerequisitos": [
+        "0700",
+        "0416"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0429",
+      "nombre": "Operaciones Unitarias COMP(IQ-6)",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0416"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0433",
+      "nombre": "Ingeniería del Azúcar",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0394",
+        "0416"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0442",
+      "nombre": "Bioingeniería 1",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0416",
+        "0440"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0484",
+      "nombre": "Conservación de Energía en la Industria",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0416",
+        "0396"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0434",
+      "nombre": "Procesos Químicos Industriales",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0396",
+        "0418"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0436",
+      "nombre": "Diseño de Equipo",
+      "creditos": 6,
+      "semestre": 10,
+      "prerequisitos": [
+        "0704",
+        "0418"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0486",
+      "nombre": "Diseño de Plantas",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418",
+        "0704"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2002",
+      "nombre": "Prácticas Finales Ingeniería Química",
+      "creditos": 0,
+      "semestre": 10,
+      "prerequisitos": [
+        "2036",
+        "0418",
+        "0430",
+        "0398"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7902",
+      "nombre": "Seminario de Investigación Química",
+      "creditos": 3,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418",
+        "0398"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7982",
+      "nombre": "Seminario de Investigación E.P.S. Química",
+      "creditos": 3,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418",
+        "0398"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0196",
+      "nombre": "Calidad del Aire",
+      "creditos": 6,
+      "semestre": 10,
+      "prerequisitos": [
+        "0198"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0409",
+      "nombre": "Separación por Medio de Membranas Selectivas",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418",
+        "0396"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0421",
+      "nombre": "Gestión Total de la Calidad",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0423",
+      "nombre": "Extracciones Industriales",
+      "creditos": 6,
+      "semestre": 10,
+      "prerequisitos": [
+        "0418"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0432",
+      "nombre": "Dinámica de Procesos Químicos",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0396",
+        "0418"
+      ],
+      "obligatorio": false
+    }
+  ]
+}

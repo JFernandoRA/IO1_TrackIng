@@ -1,0 +1,874 @@
+{
+  "carrera": "Ingeniería Mecánica Industrial",
+  "carrera_id": "ingenieriaMecanicaIndustrial",
+  "pensum": "CLAR",
+  "vigente_desde": 2022,
+  "fuente": "https://redesestudio.ingenieria.usac.edu.gt/redesDeEstudio/ingenieriaMecanicaIndustrial/24/clar",
+  "total_cursos": 85,
+  "cursos": [
+    {
+      "codigo": "0005",
+      "nombre": "Técnicas de Estudio e Investigación",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0017",
+      "nombre": "Área Social Humanística 1",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0069",
+      "nombre": "Área Técnica Complementaria 1",
+      "creditos": 4,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0101",
+      "nombre": "Área Matemática Básica 1",
+      "creditos": 9,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0348",
+      "nombre": "Química General 1",
+      "creditos": 7,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0610",
+      "nombre": "Informática",
+      "creditos": 3,
+      "semestre": 1,
+      "prerequisitos": [],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0019",
+      "nombre": "Área Social Humanística 2",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [
+        "0017"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0028",
+      "nombre": "Ecología",
+      "creditos": 4,
+      "semestre": 2,
+      "prerequisitos": [
+        "0348"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0073",
+      "nombre": "Dibujo Técnico Mecánico",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [
+        "0069"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0103",
+      "nombre": "Área Matemática Básica 2",
+      "creditos": 9,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0147",
+      "nombre": "Física Básica",
+      "creditos": 5,
+      "semestre": 2,
+      "prerequisitos": [
+        "0101"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0662",
+      "nombre": "Legislación 1",
+      "creditos": 3,
+      "semestre": 2,
+      "prerequisitos": [
+        "0005",
+        "0017"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0667",
+      "nombre": "Programación Comercial 1",
+      "creditos": 4,
+      "semestre": 2,
+      "prerequisitos": [
+        "0610"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0107",
+      "nombre": "Área Matemática Intermedia 1",
+      "creditos": 9,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0150",
+      "nombre": "Física 1",
+      "creditos": 5,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103",
+        "0147"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0664",
+      "nombre": "Legislación 2",
+      "creditos": 3,
+      "semestre": 3,
+      "prerequisitos": [
+        "0662"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0732",
+      "nombre": "Estadística 1",
+      "creditos": 5,
+      "semestre": 3,
+      "prerequisitos": [
+        "0005",
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2025",
+      "nombre": "Prácticas Iniciales",
+      "creditos": 0,
+      "semestre": 3,
+      "prerequisitos": [
+        "0103"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0001",
+      "nombre": "Ética Profesional",
+      "creditos": 2,
+      "semestre": 3,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0352",
+      "nombre": "Química 2",
+      "creditos": 6,
+      "semestre": 3,
+      "prerequisitos": [
+        "0101",
+        "0348"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0112",
+      "nombre": "Área Matemática Intermedia 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0114",
+      "nombre": "Área Matemática Intermedia 3",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0152",
+      "nombre": "Física 2",
+      "creditos": 6,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0170",
+      "nombre": "Mecánica Analítica 1",
+      "creditos": 4,
+      "semestre": 4,
+      "prerequisitos": [
+        "0107",
+        "0150"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0734",
+      "nombre": "Estadística 2",
+      "creditos": 5,
+      "semestre": 4,
+      "prerequisitos": [
+        "0732"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0018",
+      "nombre": "Filosofía de la Ciencia",
+      "creditos": 1,
+      "semestre": 4,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0116",
+      "nombre": "Matemática Aplicada 3",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0114"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0172",
+      "nombre": "Mecánica Analítica 2",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0170"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0200",
+      "nombre": "Ingeniería Eléctrica 1",
+      "creditos": 6,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0152"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0250",
+      "nombre": "Mecánica de Fluidos",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0170"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0300",
+      "nombre": "Resistencia de Materiales 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0114",
+        "0170"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0452",
+      "nombre": "Ciencia de los Materiales",
+      "creditos": 4,
+      "semestre": 5,
+      "prerequisitos": [
+        "0152"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0118",
+      "nombre": "Matemática Aplicada 1",
+      "creditos": 5,
+      "semestre": 5,
+      "prerequisitos": [
+        "0112",
+        "0114"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0252",
+      "nombre": "Hidráulica",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0250"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0302",
+      "nombre": "Resistencia de Materiales 2",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0300"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0390",
+      "nombre": "Termodinámica 1",
+      "creditos": 6,
+      "semestre": 6,
+      "prerequisitos": [
+        "0250"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0454",
+      "nombre": "Metalurgia y Metalografía",
+      "creditos": 6,
+      "semestre": 6,
+      "prerequisitos": [
+        "0452"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0520",
+      "nombre": "Procesos de Manufactura 1",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0452"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0530",
+      "nombre": "Mecanismos",
+      "creditos": 3,
+      "semestre": 6,
+      "prerequisitos": [
+        "0172",
+        "0452"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0120",
+      "nombre": "Matemática Aplicada 2",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0118"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0122",
+      "nombre": "Matemática Aplicada 4",
+      "creditos": 5,
+      "semestre": 6,
+      "prerequisitos": [
+        "0118"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0022",
+      "nombre": "Psicología Industrial",
+      "creditos": 3,
+      "semestre": 7,
+      "prerequisitos": [
+        "0019"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0392",
+      "nombre": "Termodinámica 2",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0390"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0508",
+      "nombre": "Montaje y Mantenimiento de Equipo",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0520"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0524",
+      "nombre": "Diseño de Máquinas 1",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0302",
+        "0452"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2036",
+      "nombre": "Prácticas Intermedias",
+      "creditos": 0,
+      "semestre": 7,
+      "prerequisitos": [
+        "0390",
+        "2025"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0258",
+      "nombre": "Máquinas Hidráulicas",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0252"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0335",
+      "nombre": "Gestión de Desastres",
+      "creditos": 4,
+      "semestre": 7,
+      "prerequisitos": [
+        "0390"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0532",
+      "nombre": "Vibraciones",
+      "creditos": 6,
+      "semestre": 7,
+      "prerequisitos": [
+        "0530"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0506",
+      "nombre": "Plantas de Vapor",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0392"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0526",
+      "nombre": "Diseño de Máquinas 2",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0524"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0601",
+      "nombre": "Investigación de Operaciones I",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0116"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0637",
+      "nombre": "Diseño Industrial",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0734"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0653",
+      "nombre": "Ingeniería de Costos",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0022"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0502",
+      "nombre": "Refrigeración y Aire Acondicionado",
+      "creditos": 4,
+      "semestre": 8,
+      "prerequisitos": [
+        "0392"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0504",
+      "nombre": "Motores de Combustión Interna",
+      "creditos": 6,
+      "semestre": 8,
+      "prerequisitos": [
+        "0392"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0512",
+      "nombre": "Instrumentación Mecánica",
+      "creditos": 3,
+      "semestre": 9,
+      "prerequisitos": [
+        "0506"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0603",
+      "nombre": "Investigación de Operaciones II",
+      "creditos": 6,
+      "semestre": 9,
+      "prerequisitos": [
+        "0601"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0639",
+      "nombre": "Control Estadístico de la Calidad",
+      "creditos": 6,
+      "semestre": 9,
+      "prerequisitos": [
+        "0637"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0655",
+      "nombre": "Administración Financiera",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0653"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0672",
+      "nombre": "Fundamentos de Administración",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0022",
+        "0653"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0674",
+      "nombre": "Fundamentos de Mercadotecnia",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0637"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0700",
+      "nombre": "Ingeniería Económica 1",
+      "creditos": 4,
+      "semestre": 9,
+      "prerequisitos": [
+        "0653"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0510",
+      "nombre": "Instalaciones Mecánicas",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0512"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0528",
+      "nombre": "Diseño de Máquinas 3",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0526"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0634",
+      "nombre": "Ingeniería de Métodos",
+      "creditos": 7,
+      "semestre": 10,
+      "prerequisitos": [
+        "0639",
+        "0653"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0643",
+      "nombre": "Salud y Seguridad Ocupacional",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0639"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0706",
+      "nombre": "Preparación y Evaluación de Proyectos 1",
+      "creditos": 5,
+      "semestre": 10,
+      "prerequisitos": [
+        "0674",
+        "0700"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0288",
+      "nombre": "Introducción al Estudio de Impacto Ambiental",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0639"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0645",
+      "nombre": "Ingeniería Textil",
+      "creditos": 4,
+      "semestre": 10,
+      "prerequisitos": [
+        "0639"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0640",
+      "nombre": "Control de la Producción",
+      "creditos": 6,
+      "semestre": 11,
+      "prerequisitos": [
+        "0634"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0659",
+      "nombre": "Administración de Recursos Humanos",
+      "creditos": 6,
+      "semestre": 11,
+      "prerequisitos": [
+        "0634",
+        "0672"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0665",
+      "nombre": "Microeconomía",
+      "creditos": 3,
+      "semestre": 11,
+      "prerequisitos": [
+        "0700"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0709",
+      "nombre": "Gestión de Proyectos",
+      "creditos": 4,
+      "semestre": 11,
+      "prerequisitos": [
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7987",
+      "nombre": "Seminario de Investigación E.P.S. Mecánica Industrial",
+      "creditos": 3,
+      "semestre": 11,
+      "prerequisitos": [
+        "0528",
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "7995",
+      "nombre": "Seminario de Investigación Mecánica Industrial",
+      "creditos": 3,
+      "semestre": 11,
+      "prerequisitos": [
+        "0528",
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0620",
+      "nombre": "Gestión Ambiental",
+      "creditos": 4,
+      "semestre": 11,
+      "prerequisitos": [
+        "0288",
+        "0706"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0676",
+      "nombre": "Comercio Internacional",
+      "creditos": 3,
+      "semestre": 11,
+      "prerequisitos": [
+        "0674"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0609",
+      "nombre": "Innovación y Emprendimiento",
+      "creditos": 6,
+      "semestre": 12,
+      "prerequisitos": [
+        "0706"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0614",
+      "nombre": "Logística y Cadena de Suministro",
+      "creditos": 4,
+      "semestre": 12,
+      "prerequisitos": [
+        "0640"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0622",
+      "nombre": "Sistema de Gestión de la Calidad",
+      "creditos": 6,
+      "semestre": 12,
+      "prerequisitos": [
+        "0640"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0632",
+      "nombre": "Ingeniería de Plantas",
+      "creditos": 6,
+      "semestre": 12,
+      "prerequisitos": [
+        "0640",
+        "0643"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "2007",
+      "nombre": "Prácticas Finales Ingeniería Mecánica Industrial",
+      "creditos": 0,
+      "semestre": 12,
+      "prerequisitos": [
+        "0640",
+        "2036"
+      ],
+      "obligatorio": true
+    },
+    {
+      "codigo": "0606",
+      "nombre": "Análisis de Sistemas Industriales",
+      "creditos": 3,
+      "semestre": 12,
+      "prerequisitos": [
+        "0603",
+        "0640"
+      ],
+      "obligatorio": false
+    },
+    {
+      "codigo": "0612",
+      "nombre": "Gestión Tecnológica",
+      "creditos": 4,
+      "semestre": 12,
+      "prerequisitos": [
+        "0603",
+        "0640"
+      ],
+      "obligatorio": false
+    }
+  ]
+}
