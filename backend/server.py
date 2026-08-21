@@ -19,6 +19,13 @@ Ejecutar con:  python server.py
 from __future__ import annotations
 
 import os
+import sys
+
+# Asegura que este directorio (backend/) esté en sys.path, sin importar si
+# este módulo se ejecuta directamente (python server.py) o se importa como
+# paquete (p. ej. "backend.server" en Vercel), para que los imports planos
+# de abajo (ruta_optima, utilidades) sigan funcionando en ambos casos.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
