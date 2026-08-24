@@ -357,7 +357,7 @@
       "prerequisitos": [
         "0732"
       ],
-      "obligatorio": false
+      "obligatorio": true
     },
     {
       "codigo": "0601",

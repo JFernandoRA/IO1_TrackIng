@@ -69,6 +69,7 @@ async function seleccionarCarrera(carrera) {
   state.malla = await respuesta.json();
   state.cursos = state.malla.cursos;
   state.dependientesDirectos = construirDependientesDirectos(state.cursos);
+  state.cursosPorCodigo = new Map(state.cursos.map(c => [c.codigo, c]));
 
   tituloFormulario.textContent = `${state.malla.carrera} · ${state.malla.pensum} ${state.malla.vigente_desde}`;
   construirSelectSemestre();
@@ -136,6 +137,23 @@ function obtenerDependientesTransitivos(codigo) {
   return visitados;
 }
 
+// Todos los prerequisitos de `codigo`, directos e indirectos (subiendo la
+// cadena). No tiene sentido marcar un curso como aprobado si no se han
+// marcado también los cursos que necesitaba antes.
+function obtenerPrerequisitosTransitivos(codigo) {
+  const visitados = new Set();
+  const curso = state.cursosPorCodigo.get(codigo);
+  const pila = [...(curso?.prerequisitos || [])];
+  while (pila.length > 0) {
+    const actual = pila.pop();
+    if (visitados.has(actual)) continue;
+    visitados.add(actual);
+    const cursoActual = state.cursosPorCodigo.get(actual);
+    (cursoActual?.prerequisitos || []).forEach(prereq => pila.push(prereq));
+  }
+  return visitados;
+}
+
 function renderizarGridCursos() {
   gridCursos.innerHTML = "";
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
@@ -181,7 +199,11 @@ function alternarMarcado(codigo) {
     state.marcados.delete(codigo);
     obtenerDependientesTransitivos(codigo).forEach(dep => state.marcados.delete(dep));
   } else {
+    // Al marcar, se arrastra hacia atrás: no se puede haber aprobado un
+    // curso sin haber aprobado antes sus prerequisitos (directos e
+    // indirectos), así que se marcan también automáticamente.
     state.marcados.add(codigo);
+    obtenerPrerequisitosTransitivos(codigo).forEach(prereq => state.marcados.add(prereq));
   }
   // Se re-renderiza toda la grilla (no solo el bloque clickeado) porque la
   // cascada puede haber cambiado el estado visual de varios cursos a la vez.
