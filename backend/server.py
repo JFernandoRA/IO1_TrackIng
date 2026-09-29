@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import sys
+import unicodedata
 
 # Asegura que este directorio (backend/) esté en sys.path, sin importar si
 # este módulo se ejecuta directamente (python server.py) o se importa como
@@ -75,11 +76,85 @@ class SolicitudPlan(BaseModel):
     iniciar_en_vacaciones: bool = False
 
 
+NOMBRE_SEMINARIO_UNIFICADO = "Seminario de Investigación o Seminario de Investigación E.P.S."
+
+
+def _normalizar_nombre(texto: str) -> str:
+    texto = (texto or "").lower().strip()
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(ch)
+    )
+
+
+def unificar_seminarios_investigacion(cursos: list[dict]) -> list[dict]:
+    """
+    En el 10mo semestre (9no, 11vo o 12vo según la carrera) existen dos
+    seminarios alternativos: "Seminario de Investigación ..." y
+    "Seminario de Investigación E.P.S. ...". El estudiante lleva solo UNO
+    de los dos, así que aquí se fusionan en un único curso llamado
+    "Seminario de Investigación o Seminario de Investigación E.P.S.".
+
+    - Conserva el código del seminario regular (así sigue coincidiendo con
+      horarios_vacaciones.json, que publica ese código).
+    - Queda como obligatorio (el estudiante debe llevar uno de los dos).
+    - "codigos_equivalentes" guarda los dos códigos originales.
+    - Si algún curso tuviera como prerequisito el código del seminario
+      E.P.S., se redirige al código del curso unificado.
+
+    Si la malla no tiene exactamente un seminario regular y uno E.P.S., se
+    devuelve sin cambios. Retorna una lista nueva; no modifica la original.
+    """
+    seminarios = [
+        c for c in cursos
+        if _normalizar_nombre(c.get("nombre", "")).startswith("seminario de investigacion")
+    ]
+    eps = [c for c in seminarios if "e.p.s" in _normalizar_nombre(c["nombre"])]
+    regulares = [c for c in seminarios if c not in eps]
+    if len(eps) != 1 or len(regulares) != 1:
+        return cursos
+
+    regular, alterno = regulares[0], eps[0]
+    prereqs = list(dict.fromkeys(
+        p for p in regular.get("prerequisitos", []) + alterno.get("prerequisitos", [])
+        if p not in (regular["codigo"], alterno["codigo"])
+    ))
+    unificado = {
+        **regular,
+        "nombre": NOMBRE_SEMINARIO_UNIFICADO,
+        "creditos": max(regular.get("creditos", 0), alterno.get("creditos", 0)),
+        "semestre": min(regular.get("semestre", 99), alterno.get("semestre", 99)),
+        "prerequisitos": prereqs,
+        "obligatorio": True,
+        "codigos_equivalentes": [regular["codigo"], alterno["codigo"]],
+    }
+
+    resultado = []
+    for curso in cursos:
+        if curso is alterno:
+            continue
+        if curso is regular:
+            resultado.append(unificado)
+            continue
+        if alterno["codigo"] in curso.get("prerequisitos", []):
+            curso = {
+                **curso,
+                "prerequisitos": list(dict.fromkeys(
+                    regular["codigo"] if p == alterno["codigo"] else p
+                    for p in curso["prerequisitos"]
+                )),
+            }
+        resultado.append(curso)
+    return resultado
+
+
 def _cargar_malla_o_404(archivo: str) -> dict:
     ruta = os.path.join(DATA_DIR, archivo)
     if not os.path.isfile(ruta):
         raise HTTPException(status_code=404, detail=f"No existe la malla '{archivo}'.")
-    return cargar_json(ruta)
+    malla = cargar_json(ruta)
+    malla["cursos"] = unificar_seminarios_investigacion(malla["cursos"])
+    malla["total_cursos"] = len(malla["cursos"])
+    return malla
 
 
 @app.get("/api/health")
@@ -91,7 +166,7 @@ def health():
 def listar_carreras():
     resultado = []
     for archivo in listar_mallas_disponibles():
-        malla = cargar_json(os.path.join(DATA_DIR, archivo))
+        malla = _cargar_malla_o_404(archivo)
         resultado.append({
             "archivo": archivo,
             "carrera_id": malla.get("carrera_id"),
