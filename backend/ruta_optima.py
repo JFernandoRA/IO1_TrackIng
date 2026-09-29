@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from typing import Iterable
 
 import networkx as nx
@@ -16,10 +17,6 @@ class RutaOptimaError(Exception):
     """
 
 
-# ---------------------------------------------------------------------------
-# Helpers de horas (las mallas de USAC solo traen créditos)
-# ---------------------------------------------------------------------------
-
 def horas_teoricas_de(curso: dict) -> float:
     if "horas_teoricas" in curso and curso["horas_teoricas"] is not None:
         return curso["horas_teoricas"]
@@ -33,10 +30,6 @@ def horas_laboratorio_de(curso: dict) -> float:
 def _es_obligatorio(curso: dict) -> bool:
     return bool(curso.get("obligatorio", True))
 
-
-# ---------------------------------------------------------------------------
-# Utilidades internas compartidas
-# ---------------------------------------------------------------------------
 
 def _construir_grafo(cursos: list[dict]) -> nx.DiGraph:
     grafo = nx.DiGraph()
@@ -89,10 +82,6 @@ def _diagnosticar_bloqueo(
         )
     return "; ".join(detalle)
 
-
-# ---------------------------------------------------------------------------
-# Ruta regular (slots semestrales dinámicos)
-# ---------------------------------------------------------------------------
 
 def calcular_ruta_regular(
     cursos: list[dict],
@@ -188,10 +177,6 @@ def calcular_ruta_regular(
 
     return ruta
 
-
-# ---------------------------------------------------------------------------
-# Ruta de vacaciones
-# ---------------------------------------------------------------------------
 
 def _desbloquea_obligatorio_futuro(
     codigo_optativo: str,
@@ -310,10 +295,6 @@ def calcular_ruta_vacaciones(
 
     return ruta
 
-
-# ---------------------------------------------------------------------------
-# Cursos no obligatorios: social humanística, idiomas técnicos y créditos
-# ---------------------------------------------------------------------------
 
 SOCIAL_HUMANISTICA_CODIGOS = ("0017", "0019", "0010", "0018", "0001")
 
@@ -460,19 +441,15 @@ def seleccionar_cursos_objetivo(
 
 
 def _normalizar_texto(texto: str) -> str:
-    import unicodedata
     texto = (texto or "").lower()
     return "".join(
         ch for ch in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(ch)
     )
 
 
-# ---------------------------------------------------------------------------
-# Plan hasta el cierre de la carrera (todos los semestres que faltan)
-# ---------------------------------------------------------------------------
-
 MODOS_PLAN_ANUAL = {"avanzar", "nivelarse", "tiempo_normal"}
 MAX_SEMESTRES_SEGURIDAD = 40
+
 
 def _plan_restante(
     cursos: list[dict],
@@ -602,6 +579,7 @@ def _plan_restante(
         "modo": modo,
     }
 
+
 def calcular_plan_restante(
     cursos: list[dict],
     periodos_vacacionales: list[dict],
@@ -671,6 +649,7 @@ def sanear_aprobados_por_prerequisitos(
 
     removidos_por_arrastre = declarados - aprobados_consistentes
     return aprobados_consistentes, removidos_por_arrastre
+
 
 def inyectar_prerequisitos_optativos(cursos: list[dict]) -> list[dict]:
     cursos_copia = [dict(curso) for curso in cursos]

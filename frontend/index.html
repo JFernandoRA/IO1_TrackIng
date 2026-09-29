@@ -41,7 +41,7 @@
     <div class="campo">
       <label>Marca los cursos que ya has ganado</label>
       <p class="ayuda">
-        Al elegir tu semestre se marcan en verde
+        Al elegir tu semestre se marcan en verde.
        
       </p>
       <div class="modo-marcado">
@@ -50,7 +50,7 @@
         <label><input type="radio" name="modo-marcado" value="no-vacaciones"> Solo semestre</label>
         <label><input type="radio" name="modo-marcado" value="descartar"> No se llevará nunca</label>
       </div>
-      <p class="ayuda">Con la opción de "No se llevará nunca" hace que al moomento de trazar la ruta no aparezca. <span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
+      <p class="ayuda">Con la opción de "No se llevará nunca" hace que al momento de trazar la ruta no aparezca. <span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
       <div id="grid-cursos"></div>
     </div>
 
@@ -58,7 +58,7 @@
       <label class="check-idiomas">
         <input type="checkbox" id="check-idiomas"> Cursar los idiomas técnicos
       </label>
-      <p class="ayuda">Si no se marca no se toman en la ruta los idiomas tecnicos y el sistema completa los créditos con otros cursos.</p>
+      <p class="ayuda">Si no se marca no se toman en la ruta los idiomas técnicos y el sistema completa los créditos con otros cursos.</p>
     </div>
 
     <div class="campo">
@@ -84,12 +84,16 @@
     <div id="resumen-plan" class="resumen-plan"></div>
     <div id="grid-resultado" class="grid-resultado"></div>
     <div class="acciones-formulario">
+      <button id="btn-descargar-pdf" class="btn btn-primario" type="button">Descargar PDF</button>
       <button id="btn-limpiar-resultado" class="btn btn-secundario" type="button">Limpiar y hacer otra ruta</button>
     </div>
   </section>
 
 </main>
 
+<script src="js/lib/jspdf.umd.min.js"></script>
+<script src="js/lib/jspdf.plugin.autotable.min.js"></script>
+<script src="js/pdf.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

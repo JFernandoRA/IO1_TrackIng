@@ -17,6 +17,7 @@ const state = {
   modoMarcado: "ganados",
   iniciarEnVacaciones: false,
   modo: "nivelarse",
+  ultimoPlan: null,
 };
 
 const TIPOS_ETIQUETA = {
@@ -46,6 +47,7 @@ const resumenPlan = document.getElementById("resumen-plan");
 const gridResultado = document.getElementById("grid-resultado");
 const btnLimpiar = document.getElementById("btn-limpiar");
 const btnLimpiarResultado = document.getElementById("btn-limpiar-resultado");
+const btnDescargarPdf = document.getElementById("btn-descargar-pdf");
 
 function mostrarPantalla(pantalla) {
   [pantallaCarreras, pantallaFormulario, pantallaResultado].forEach(p => p.classList.add("oculto"));
@@ -104,7 +106,7 @@ async function seleccionarCarrera(carrera) {
 function construirSelectSemestre() {
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
   selectSemestre.innerHTML = "";
-  semestres.forEach((numero, indice) => {
+  semestres.forEach(numero => {
     const opcion = document.createElement("option");
     opcion.value = `s-${numero}`;
     opcion.textContent = `Semestre ${numero}`;
@@ -218,7 +220,7 @@ function renderizarGridCursos() {
 
         const codigo = document.createElement("span");
         codigo.className = "curso-codigo";
-        codigo.textContent = curso.codigo;
+        codigo.textContent = `${curso.codigo} · ${curso.creditos ?? 0} créd.`;
         if (!esOptativo) codigo.prepend(crearPuntoObligatorio());
 
         const nombre = document.createElement("span");
@@ -365,6 +367,20 @@ async function calcularRuta() {
       return;
     }
 
+    state.ultimoPlan = {
+      datos: datos,
+      promedio: promedio,
+      modo: state.modo,
+      puntoPartida: state.iniciarEnVacaciones
+        ? `Vacaciones de semestre ${state.semestreActual - 1}`
+        : `Semestre ${state.semestreActual}`,
+      restricciones: Object.fromEntries(
+        state.cursos
+          .filter(c => state.noSemestre.has(c.codigo) !== state.noVacaciones.has(c.codigo))
+          .map(c => [c.codigo, state.noSemestre.has(c.codigo) ? "Reservado para vacaciones" : "Reservado para semestre"])
+      ),
+    };
+
     renderizarResultado(datos);
     mostrarPantalla(pantallaResultado);
   } catch (error) {
@@ -378,6 +394,56 @@ async function calcularRuta() {
 function mostrarError(texto) {
   mensajeError.textContent = texto;
   mensajeError.classList.remove("oculto");
+}
+
+function obtenerAvisos(datos) {
+  const avisos = [];
+  const objetivo = datos.objetivo_creditos;
+  if (objetivo) {
+    if (objetivo.social_humanistica_faltantes > 0) {
+      avisos.push(`Faltan ${objetivo.social_humanistica_faltantes} crédito(s) de Social Humanística: con los cursos del área que no descartaste no se llega a los ${objetivo.social_humanistica_requeridos} créditos requeridos.`);
+    }
+    if (objetivo.creditos_faltantes > 0) {
+      avisos.push(`Con los cursos disponibles en la malla faltan ${objetivo.creditos_faltantes} créditos para llegar al mínimo.`);
+    }
+    if (objetivo.idiomas_agregados_por_necesidad) {
+      avisos.push("Se incluyeron idiomas técnicos porque, sin ellos, no alcanzaban los créditos requeridos.");
+    }
+  }
+  if (datos.excluidos_obligatorios && datos.excluidos_obligatorios.length > 0) {
+    avisos.push(`Excluiste (o dependen de lo que excluiste) ${datos.excluidos_obligatorios.length} curso(s) obligatorio(s): sin ellos no se puede cerrar pénsum.`);
+  }
+  if (datos.sin_oferta_vacacional && datos.sin_oferta_vacacional.length > 0) {
+    const nombres = datos.sin_oferta_vacacional.map(c => `${c.codigo} ${c.nombre}`).join(", ");
+    avisos.push(`No se ofrecen en vacaciones, así que no se pudieron reservar para ese periodo (se descartaron): ${nombres}.`);
+  }
+  return avisos;
+}
+
+async function descargarPdf() {
+  const plan = state.ultimoPlan;
+  if (!plan) return;
+
+  const textoOriginal = btnDescargarPdf.textContent;
+  btnDescargarPdf.disabled = true;
+  btnDescargarPdf.textContent = "Generando PDF...";
+  try {
+    await exportarRutaPDF(plan.datos, {
+      carrera: state.malla.carrera,
+      pensum: `${state.malla.pensum} ${state.malla.vigente_desde}`,
+      puntoPartida: plan.puntoPartida,
+      modo: MODOS.find(m => m.valor === plan.modo)?.titulo ?? plan.modo,
+      promedio: plan.promedio,
+      avisos: obtenerAvisos(plan.datos),
+      esObligatorio: codigo => (state.cursosPorCodigo.get(codigo)?.obligatorio ?? true),
+      restriccion: codigo => plan.restricciones[codigo] || "",
+    });
+  } catch (error) {
+    alert(error.message || "No se pudo generar el PDF.");
+  } finally {
+    btnDescargarPdf.disabled = false;
+    btnDescargarPdf.textContent = textoOriginal;
+  }
 }
 
 function renderizarResultado(datos) {
@@ -448,24 +514,7 @@ function renderizarResultado(datos) {
     parrafoSH.innerHTML = `<span class="etiqueta">Área Social Humanística:</span> ${objetivo.social_humanistica_en_plan} de ${objetivo.social_humanistica_requeridos} créditos (entre ganados y planificados).`;
     resumenPlan.appendChild(parrafoSH);
 
-    const avisos = [];
-    if (objetivo.social_humanistica_faltantes > 0) {
-      avisos.push(`Faltan ${objetivo.social_humanistica_faltantes} crédito(s) de Social Humanística: con los cursos del área que no descartaste no se llega a los ${objetivo.social_humanistica_requeridos} créditos requeridos.`);
-    }
-    if (objetivo.creditos_faltantes > 0) {
-      avisos.push(`Con los cursos disponibles en la malla faltan ${objetivo.creditos_faltantes} créditos para llegar al mínimo.`);
-    }
-    if (objetivo.idiomas_agregados_por_necesidad) {
-      avisos.push("Se incluyeron idiomas técnicos porque, sin ellos, no alcanzaban los créditos requeridos.");
-    }
-    if (datos.excluidos_obligatorios && datos.excluidos_obligatorios.length > 0) {
-      avisos.push(`Excluiste (o dependen de lo que excluiste) ${datos.excluidos_obligatorios.length} curso(s) obligatorio(s): sin ellos no se puede cerrar pénsum.`);
-    }
-    if (datos.sin_oferta_vacacional && datos.sin_oferta_vacacional.length > 0) {
-      const nombres = datos.sin_oferta_vacacional.map(c => `${c.codigo} ${c.nombre}`).join(", ");
-      avisos.push(`No se ofrecen en vacaciones, así que no se pudieron reservar para ese periodo (se descartaron): ${nombres}.`);
-    }
-    avisos.forEach(texto => {
+    obtenerAvisos(datos).forEach(texto => {
       const aviso = document.createElement("p");
       aviso.className = "aviso-plan";
       aviso.textContent = texto;
@@ -567,6 +616,7 @@ btnLimpiar.addEventListener("click", limpiarCampos);
 btnLimpiarResultado.addEventListener("click", limpiarCampos);
 
 btnCalcular.addEventListener("click", calcularRuta);
+btnDescargarPdf.addEventListener("click", descargarPdf);
 
 btnVolverCarreras.addEventListener("click", () => {
   mostrarPantalla(pantallaCarreras);
