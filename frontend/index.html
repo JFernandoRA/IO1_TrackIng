@@ -25,7 +25,8 @@
     <h1 id="titulo-formulario"></h1>
 
     <div class="campo">
-      <label for="select-semestre">¿En qué semestre vas actualmente?</label>
+      <label for="select-semestre">¿Dónde vas actualmente?</label>
+      <p class="ayuda">Elige tu semestre, o el periodo de vacaciones que sigue al semestre que ya terminaste.</p>
       <select id="select-semestre"></select>
     </div>
 
@@ -37,7 +38,21 @@
         (por ejemplo, si vas en sexto semestre pero todavía no ganas Física 1, quítale la marca:
         así el sistema sabe que la llevas atrasada).
       </p>
+      <div class="modo-marcado">
+        <label><input type="radio" name="modo-marcado" value="ganados" checked> Marcar cursos ganados</label>
+        <label><input type="radio" name="modo-marcado" value="no-semestre"> No quiero llevarlo en semestre (solo en vacaciones)</label>
+        <label><input type="radio" name="modo-marcado" value="no-vacaciones"> No quiero llevarlo en vacaciones (solo en semestre)</label>
+        <label><input type="radio" name="modo-marcado" value="descartar"> Descartar curso (no lo quiero llevar nunca)</label>
+      </div>
+      <p class="ayuda">Con las opciones de "no quiero llevarlo" das click en un curso para reservarlo a un solo tipo de periodo; "Descartar" lo saca del plan por completo. Un curso solo para vacaciones tiene que estar en la oferta vacacional. El punto <span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
       <div id="grid-cursos"></div>
+    </div>
+
+    <div class="campo oculto" id="campo-idiomas">
+      <label class="check-idiomas">
+        <input type="checkbox" id="check-idiomas"> Quiero cursar los idiomas técnicos
+      </label>
+      <p class="ayuda">Si no lo marcas, los idiomas técnicos no se incluyen y el sistema completa los créditos con otros cursos más convenientes.</p>
     </div>
 
     <div class="campo">

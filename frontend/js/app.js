@@ -11,7 +11,18 @@ const state = {
   cursos: [],
   semestreActual: null,
   marcados: new Set(),
+  noSemestre: new Set(),
+  noVacaciones: new Set(),
+  descartados: new Set(),
+  modoMarcado: "ganados",
+  iniciarEnVacaciones: false,
   modo: "nivelarse",
+};
+
+const TIPOS_ETIQUETA = {
+  social_humanistica: "Social Humanística",
+  idioma: "Idioma técnico",
+  optativo: "Optativo",
 };
 
 const pantallaCarreras = document.getElementById("pantalla-carreras");
@@ -25,6 +36,8 @@ const gridCursos = document.getElementById("grid-cursos");
 const inputPromedio = document.getElementById("input-promedio");
 const opcionesModo = document.getElementById("opciones-modo");
 const btnCalcular = document.getElementById("btn-calcular");
+const campoIdiomas = document.getElementById("campo-idiomas");
+const checkIdiomas = document.getElementById("check-idiomas");
 const mensajeError = document.getElementById("mensaje-error");
 
 const btnVolverCarreras = document.getElementById("btn-volver-carreras");
@@ -70,6 +83,13 @@ async function seleccionarCarrera(carrera) {
   state.cursos = state.malla.cursos;
   state.dependientesDirectos = construirDependientesDirectos(state.cursos);
   state.cursosPorCodigo = new Map(state.cursos.map(c => [c.codigo, c]));
+  state.noSemestre = new Set();
+  state.noVacaciones = new Set();
+  state.descartados = new Set();
+  state.modoMarcado = "ganados";
+  document.querySelector('input[name="modo-marcado"][value="ganados"]').checked = true;
+  checkIdiomas.checked = false;
+  campoIdiomas.classList.toggle("oculto", !state.cursos.some(c => /idioma t[eé]cnico/i.test(c.nombre)));
 
   tituloFormulario.textContent = `${state.malla.carrera} · ${state.malla.pensum} ${state.malla.vigente_desde}`;
   construirSelectSemestre();
@@ -82,22 +102,43 @@ async function seleccionarCarrera(carrera) {
 function construirSelectSemestre() {
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
   selectSemestre.innerHTML = "";
-  semestres.forEach(numero => {
+  semestres.forEach((numero, indice) => {
     const opcion = document.createElement("option");
-    opcion.value = numero;
+    opcion.value = `s-${numero}`;
     opcion.textContent = `Semestre ${numero}`;
     selectSemestre.appendChild(opcion);
+
+    // Vacaciones que siguen al semestre `numero` (también después del último).
+    const vacaciones = document.createElement("option");
+    vacaciones.value = `v-${numero}`;
+    vacaciones.textContent = `Vacaciones de semestre ${numero}`;
+    selectSemestre.appendChild(vacaciones);
   });
-  state.semestreActual = semestres[0];
-  selectSemestre.value = state.semestreActual;
+  selectSemestre.value = `s-${semestres[0]}`;
+  aplicarSeleccionPeriodo();
+}
+
+// Si se elige "Vacaciones de semestre N", el semestre N ya está terminado: el
+// siguiente semestre a cursar es N+1 y el plan arranca con esas vacaciones.
+function aplicarSeleccionPeriodo() {
+  const [tipo, numero] = selectSemestre.value.split("-");
+  state.iniciarEnVacaciones = tipo === "v";
+  state.semestreActual = Number(numero) + (state.iniciarEnVacaciones ? 1 : 0);
   recalcularMarcadosPorDefecto();
+  state.marcados.forEach(codigo => {
+    state.noSemestre.delete(codigo);
+    state.noVacaciones.delete(codigo);
+    state.descartados.delete(codigo);
+  });
   renderizarGridCursos();
 }
 
-selectSemestre.addEventListener("change", () => {
-  state.semestreActual = Number(selectSemestre.value);
-  recalcularMarcadosPorDefecto();
-  renderizarGridCursos();
+selectSemestre.addEventListener("change", aplicarSeleccionPeriodo);
+
+document.querySelectorAll('input[name="modo-marcado"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    state.modoMarcado = radio.value;
+  });
 });
 
 function recalcularMarcadosPorDefecto() {
@@ -158,6 +199,14 @@ function renderizarGridCursos() {
   gridCursos.innerHTML = "";
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
 
+  // Cursos que dependen de uno excluido: tampoco se podrán llevar.
+  const excluidosArrastrados = new Set();
+  state.cursos.forEach(c => {
+    if (estaDescartado(c.codigo)) {
+      obtenerDependientesTransitivos(c.codigo).forEach(dep => excluidosArrastrados.add(dep));
+    }
+  });
+
   semestres.forEach(numero => {
     const columna = document.createElement("div");
     columna.className = "columna-semestre";
@@ -172,17 +221,30 @@ function renderizarGridCursos() {
         const bloque = document.createElement("div");
         const esOptativo = !(curso.obligatorio ?? true);
         const marcado = state.marcados.has(curso.codigo);
-        bloque.className = `curso ${marcado ? "curso-marcado" : "curso-pendiente"}${esOptativo ? " curso-optativo" : ""}`;
+        const excluido = estaDescartado(curso.codigo);
+        const excluidoPorArrastre = !excluido && !marcado && excluidosArrastrados.has(curso.codigo);
+        let claseEstado = marcado ? "curso-marcado" : "curso-pendiente";
+        if (excluido) claseEstado = "curso-excluido";
+        else if (excluidoPorArrastre) claseEstado = "curso-excluido-arrastre";
+        bloque.className = `curso ${claseEstado}${esOptativo ? " curso-optativo" : ""}`;
 
         const codigo = document.createElement("span");
         codigo.className = "curso-codigo";
         codigo.textContent = curso.codigo;
+        if (!esOptativo) codigo.prepend(crearPuntoObligatorio());
 
         const nombre = document.createElement("span");
         nombre.textContent = curso.nombre;
 
         bloque.appendChild(codigo);
         bloque.appendChild(nombre);
+
+        if (!excluido && !marcado && (state.noSemestre.has(curso.codigo) || state.noVacaciones.has(curso.codigo))) {
+          const restriccion = document.createElement("span");
+          restriccion.className = "etiqueta-restriccion";
+          restriccion.textContent = state.noSemestre.has(curso.codigo) ? "solo vacaciones" : "solo semestre";
+          bloque.appendChild(restriccion);
+        }
         bloque.addEventListener("click", () => alternarMarcado(curso.codigo));
 
         columna.appendChild(bloque);
@@ -192,7 +254,56 @@ function renderizarGridCursos() {
   });
 }
 
+// Un curso está descartado si se eligió "Descartar" o si se marcó como
+// "no quiero llevarlo" tanto en semestre como en vacaciones.
+function estaDescartado(codigo) {
+  return state.descartados.has(codigo)
+    || (state.noSemestre.has(codigo) && state.noVacaciones.has(codigo));
+}
+
+function crearPuntoObligatorio() {
+  const punto = document.createElement("span");
+  punto.className = "punto-obligatorio";
+  punto.title = "Curso obligatorio";
+  punto.textContent = "● ";
+  return punto;
+}
+
+function alternarDescartado(codigo) {
+  if (state.marcados.has(codigo)) return; // un curso ya ganado no se descarta
+  if (estaDescartado(codigo)) {
+    state.descartados.delete(codigo);
+    state.noSemestre.delete(codigo);
+    state.noVacaciones.delete(codigo);
+  } else {
+    state.descartados.add(codigo);
+    state.noSemestre.delete(codigo);
+    state.noVacaciones.delete(codigo);
+  }
+  renderizarGridCursos();
+}
+
+function alternarRestriccion(codigo, conjunto) {
+  if (state.marcados.has(codigo)) return; // un curso ya ganado no se restringe
+  state.descartados.delete(codigo);
+  if (conjunto.has(codigo)) conjunto.delete(codigo);
+  else conjunto.add(codigo);
+  renderizarGridCursos();
+}
+
 function alternarMarcado(codigo) {
+  if (state.modoMarcado === "descartar") {
+    alternarDescartado(codigo);
+    return;
+  }
+  if (state.modoMarcado === "no-semestre") {
+    alternarRestriccion(codigo, state.noSemestre);
+    return;
+  }
+  if (state.modoMarcado === "no-vacaciones") {
+    alternarRestriccion(codigo, state.noVacaciones);
+    return;
+  }
   if (state.marcados.has(codigo)) {
     // Al desmarcar, se arrastra en cascada: cualquier curso que dependía
     // (directa o indirectamente) de este ya no puede darse por ganado.
@@ -204,6 +315,11 @@ function alternarMarcado(codigo) {
     // indirectos), así que se marcan también automáticamente.
     state.marcados.add(codigo);
     obtenerPrerequisitosTransitivos(codigo).forEach(prereq => state.marcados.add(prereq));
+    state.marcados.forEach(marcado => {
+      state.noSemestre.delete(marcado);
+      state.noVacaciones.delete(marcado);
+      state.descartados.delete(marcado);
+    });
   }
   // Se re-renderiza toda la grilla (no solo el bloque clickeado) porque la
   // cascada puede haber cambiado el estado visual de varios cursos a la vez.
@@ -255,6 +371,11 @@ async function calcularRuta() {
         promedio: promedio,
         modo: state.modo,
         cursos_aprobados: [...state.marcados],
+        cursos_excluidos: state.cursos.filter(c => estaDescartado(c.codigo)).map(c => c.codigo),
+        cursos_solo_vacaciones: [...state.noSemestre].filter(c => !state.noVacaciones.has(c)),
+        cursos_solo_semestre: [...state.noVacaciones].filter(c => !state.noSemestre.has(c)),
+        incluir_idiomas: checkIdiomas.checked,
+        iniciar_en_vacaciones: state.iniciarEnVacaciones,
       }),
     });
 
@@ -338,6 +459,41 @@ function renderizarResultado(datos) {
   parrafoLimite.innerHTML = `<span class="etiqueta">Límite de créditos por semestre (según tu promedio):</span> ${datos.limite_creditos}.`;
   resumenPlan.appendChild(parrafoLimite);
 
+  const objetivo = datos.objetivo_creditos;
+  if (objetivo) {
+    const parrafoCreditos = document.createElement("p");
+    parrafoCreditos.innerHTML = `<span class="etiqueta">Créditos de la carrera con este plan:</span> ${objetivo.creditos_totales_plan} de ${objetivo.creditos_requeridos} requeridos.`;
+    resumenPlan.appendChild(parrafoCreditos);
+
+    const parrafoSH = document.createElement("p");
+    parrafoSH.innerHTML = `<span class="etiqueta">Área Social Humanística:</span> ${objetivo.social_humanistica_en_plan} de ${objetivo.social_humanistica_requeridos} créditos (entre ganados y planificados).`;
+    resumenPlan.appendChild(parrafoSH);
+
+    const avisos = [];
+    if (objetivo.social_humanistica_faltantes > 0) {
+      avisos.push(`Faltan ${objetivo.social_humanistica_faltantes} crédito(s) de Social Humanística: con los cursos del área que no descartaste no se llega a los ${objetivo.social_humanistica_requeridos} créditos requeridos.`);
+    }
+    if (objetivo.creditos_faltantes > 0) {
+      avisos.push(`Con los cursos disponibles en la malla faltan ${objetivo.creditos_faltantes} créditos para llegar al mínimo.`);
+    }
+    if (objetivo.idiomas_agregados_por_necesidad) {
+      avisos.push("Se incluyeron idiomas técnicos porque, sin ellos, no alcanzaban los créditos requeridos.");
+    }
+    if (datos.excluidos_obligatorios && datos.excluidos_obligatorios.length > 0) {
+      avisos.push(`Excluiste (o dependen de lo que excluiste) ${datos.excluidos_obligatorios.length} curso(s) obligatorio(s): sin ellos no se puede cerrar pénsum.`);
+    }
+    if (datos.sin_oferta_vacacional && datos.sin_oferta_vacacional.length > 0) {
+      const nombres = datos.sin_oferta_vacacional.map(c => `${c.codigo} ${c.nombre}`).join(", ");
+      avisos.push(`No se ofrecen en vacaciones, así que no se pudieron reservar para ese periodo (se descartaron): ${nombres}.`);
+    }
+    avisos.forEach(texto => {
+      const aviso = document.createElement("p");
+      aviso.className = "aviso-plan";
+      aviso.textContent = texto;
+      resumenPlan.appendChild(aviso);
+    });
+  }
+
   gridResultado.innerHTML = "";
   Object.entries(datos.periodos).forEach(([nombrePeriodo, cursos]) => {
     const columna = document.createElement("div");
@@ -368,12 +524,29 @@ function renderizarResultado(datos) {
       const codigo = document.createElement("span");
       codigo.className = "curso-codigo";
       codigo.textContent = `${curso.codigo} · ${curso.creditos ?? 0} créd.`;
+      const cursoOriginal = state.cursosPorCodigo.get(curso.codigo);
+      if (cursoOriginal && (cursoOriginal.obligatorio ?? true)) codigo.prepend(crearPuntoObligatorio());
 
       const nombre = document.createElement("span");
       nombre.textContent = curso.nombre;
 
       bloque.appendChild(codigo);
       bloque.appendChild(nombre);
+
+      if (state.noSemestre.has(curso.codigo) !== state.noVacaciones.has(curso.codigo)) {
+        const restriccion = document.createElement("span");
+        restriccion.className = "etiqueta-tipo";
+        restriccion.textContent = state.noSemestre.has(curso.codigo) ? "Reservado para vacaciones" : "Reservado para semestre";
+        bloque.appendChild(restriccion);
+      }
+
+      const etiquetaTipo = TIPOS_ETIQUETA[curso.tipo];
+      if (etiquetaTipo) {
+        const tipo = document.createElement("span");
+        tipo.className = "etiqueta-tipo";
+        tipo.textContent = etiquetaTipo;
+        bloque.appendChild(tipo);
+      }
 
       if (esAtrasado) {
         const badge = document.createElement("span");

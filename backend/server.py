@@ -35,8 +35,11 @@ from pydantic import BaseModel
 from ruta_optima import (
     RutaOptimaError,
     calcular_plan_restante,
+    excluir_cursos,
     inyectar_prerequisitos_optativos,
     sanear_aprobados_por_prerequisitos,
+    seleccionar_cursos_objetivo,
+    tipo_de_curso,
 )
 from utilidades import (
     DATA_DIR,
@@ -65,6 +68,11 @@ class SolicitudPlan(BaseModel):
     promedio: float
     modo: str
     cursos_aprobados: list[str] = []
+    cursos_excluidos: list[str] = []
+    cursos_solo_vacaciones: list[str] = []
+    cursos_solo_semestre: list[str] = []
+    incluir_idiomas: bool = False
+    iniciar_en_vacaciones: bool = False
 
 
 def _cargar_malla_o_404(archivo: str) -> dict:
@@ -104,25 +112,76 @@ def obtener_malla(archivo: str):
 @app.post("/api/plan")
 def calcular_plan(solicitud: SolicitudPlan):
     malla = _cargar_malla_o_404(solicitud.archivo)
-    cursos = inyectar_prerequisitos_optativos(malla["cursos"])
-    por_codigo = {curso["codigo"]: curso for curso in cursos}
+    cursos_malla = [{**curso, "tipo": tipo_de_curso(curso)} for curso in malla["cursos"]]
+    por_codigo_malla = {curso["codigo"]: curso for curso in cursos_malla}
 
     semestre_actual = solicitud.semestre_actual
-    aprobados_input = set(solicitud.cursos_aprobados)
+    excluidos_input = set(solicitud.cursos_excluidos)
+    aprobados_input = set(solicitud.cursos_aprobados) - excluidos_input
+    periodos_vacacionales = cargar_periodos_vacacionales()
+
+    # "No quiero llevarlo en semestre" -> solo vacaciones;
+    # "no quiero llevarlo en vacaciones" -> solo semestre.
+    solo_vacaciones = set(solicitud.cursos_solo_vacaciones) - excluidos_input - aprobados_input
+    solo_semestre = set(solicitud.cursos_solo_semestre) - excluidos_input - aprobados_input
+    solo_vacaciones -= solo_semestre  # ambos a la vez = curso descartado
+    ambos = set(solicitud.cursos_solo_vacaciones) & set(solicitud.cursos_solo_semestre)
+    excluidos_input |= ambos - aprobados_input
+
+    # Un curso reservado para vacaciones debe estar en la oferta vacacional.
+    oferta_vacacional = set()
+    if periodos_vacacionales:
+        for entrada in periodos_vacacionales[0].get("cursos_disponibles", []):
+            oferta_vacacional.add(entrada["codigo"] if isinstance(entrada, dict) else entrada)
+    sin_oferta_vacacional = {c for c in solo_vacaciones if c not in oferta_vacacional}
+    solo_vacaciones -= sin_oferta_vacacional
+    excluidos_input |= sin_oferta_vacacional
+
+    duracion_normal = max(
+        (c.get("semestre", 0) for c in cursos_malla if c.get("obligatorio", True)),
+        default=semestre_actual,
+    )
+
+    aprobados, removidos_por_arrastre = sanear_aprobados_por_prerequisitos(
+        cursos_malla, aprobados_input
+    )
+
+    # Cursos que el estudiante no quiere llevar (y lo que depende de ellos).
+    cursos_filtrados, excluidos_efectivos = excluir_cursos(
+        cursos_malla, excluidos_input, aprobados
+    )
+    excluidos_por_arrastre = excluidos_efectivos - excluidos_input
+    excluidos_obligatorios = sorted(
+        c for c in excluidos_efectivos
+        if por_codigo_malla[c].get("obligatorio", True)
+    )
+
+    solo_vacaciones -= excluidos_efectivos
+    solo_semestre -= excluidos_efectivos
+
+    # Un curso con restricción de periodo es un curso que sí quiere llevar:
+    # si era optativo, se incluye en el plan (con sus prerequisitos).
+    cursos_filtrados = [
+        {**c, "obligatorio": True} if c["codigo"] in (solo_vacaciones | solo_semestre) else c
+        for c in cursos_filtrados
+    ]
+
+    cursos = inyectar_prerequisitos_optativos(cursos_filtrados)
+    por_codigo = {curso["codigo"]: curso for curso in cursos}
 
     reprobados = {
         codigo for codigo, curso in por_codigo.items()
         if curso.get("obligatorio", True)
         and curso.get("semestre", 0) < semestre_actual
-        and codigo not in aprobados_input
+        and codigo not in aprobados
     }
 
-    aprobados, removidos_por_arrastre = sanear_aprobados_por_prerequisitos(
-        cursos, aprobados_input
+    # Optativos / social humanística / idiomas que hacen falta para cerrar.
+    cursos, objetivo = seleccionar_cursos_objetivo(
+        cursos, aprobados, incluir_idiomas=solicitud.incluir_idiomas
     )
 
     limite_creditos = calcular_limite_creditos(solicitud.promedio)
-    periodos_vacacionales = cargar_periodos_vacacionales()
 
     try:
         plan = calcular_plan_restante(
@@ -133,6 +192,10 @@ def calcular_plan(solicitud: SolicitudPlan):
             reprobados=reprobados,
             limite_creditos=limite_creditos,
             modo=solicitud.modo,
+            iniciar_en_vacaciones=solicitud.iniciar_en_vacaciones,
+            duracion_normal_pensum=duracion_normal,
+            solo_vacaciones=solo_vacaciones,
+            solo_semestre=solo_semestre,
         )
     except RutaOptimaError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
@@ -140,6 +203,7 @@ def calcular_plan(solicitud: SolicitudPlan):
     atrasados_iniciales = [
         {"codigo": codigo, "nombre": por_codigo[codigo]["nombre"]}
         for codigo in plan["atrasados_iniciales"]
+        if codigo in reprobados
     ]
     removidos = [
         {"codigo": codigo, "nombre": por_codigo[codigo]["nombre"]}
@@ -147,8 +211,18 @@ def calcular_plan(solicitud: SolicitudPlan):
         if codigo in por_codigo
     ]
 
+    def _nombrar(codigos):
+        return [
+            {"codigo": c, "nombre": por_codigo_malla[c]["nombre"]}
+            for c in sorted(codigos) if c in por_codigo_malla
+        ]
+
     return {
         "periodos": plan["periodos"],
+        "objetivo_creditos": objetivo,
+        "excluidos_por_arrastre": _nombrar(excluidos_por_arrastre),
+        "sin_oferta_vacacional": _nombrar(sin_oferta_vacacional),
+        "excluidos_obligatorios": _nombrar(excluidos_obligatorios),
         "atrasados_iniciales": atrasados_iniciales,
         "removidos_por_arrastre": removidos,
         "duracion_normal_pensum": plan["duracion_normal_pensum"],

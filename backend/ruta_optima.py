@@ -177,6 +177,7 @@ def calcular_ruta_regular(
     aprobados: Iterable[str] | None = None,
     reprobados: Iterable[str] | None = None,
     limite_creditos: int = 37,
+    solo_vacaciones: Iterable[str] | None = None,
 ) -> dict[str, list[dict]]:
     """
     Calcula la ruta académica regular usando slots semestrales dinámicos.
@@ -226,11 +227,19 @@ def calcular_ruta_regular(
 
     aprobados = set(aprobados or [])
     reprobados = set(reprobados or [])
+    solo_vacaciones = set(solo_vacaciones or [])
 
     grafo = _construir_grafo(cursos)
     _validar_sin_ciclos(grafo)
 
     por_codigo = {curso["codigo"]: curso for curso in cursos}
+
+    # Cursos que el estudiante no quiere llevar en semestre (solo vacaciones)
+    # y todo lo que depende de ellos: esperan a que esos cursos se ganen.
+    bloqueados_por_vacaciones = set(solo_vacaciones)
+    for codigo in solo_vacaciones:
+        if codigo in grafo:
+            bloqueados_por_vacaciones |= nx.descendants(grafo, codigo)
 
     # Universo de cursos a planificar: solo obligatorios (tras la posible
     # inyección de optativos-prerequisito hecha por el caller).
@@ -256,7 +265,14 @@ def calcular_ruta_regular(
         candidatos = [
             codigo for codigo in pendientes
             if set(por_codigo[codigo].get("prerequisitos", [])) <= aprobados_acumulado
+            and codigo not in solo_vacaciones
         ]
+
+        if not candidatos and solo_vacaciones and pendientes <= bloqueados_por_vacaciones:
+            # Lo único que queda depende de cursos reservados para vacaciones.
+            if not ruta:
+                ruta[clave] = []
+            break
 
         if not candidatos:
             mensaje = _diagnosticar_bloqueo(pendientes, por_codigo, aprobados_acumulado)
@@ -332,9 +348,15 @@ def calcular_ruta_vacaciones(
     aprobados: Iterable[str] | None = None,
     limite_horas_teoricas: float = 4,
     max_cursos_por_periodo: int = 3,
+    excluir_codigos: Iterable[str] | None = None,
+    prioritarios: Iterable[str] | None = None,
 ) -> dict[str, list[dict]]:
     """
     Calcula la ruta de cursos vacacionales.
+
+    `excluir_codigos`: cursos que el estudiante no quiere llevar en
+    vacaciones (solo semestre). `prioritarios`: cursos que solo pueden
+    llevarse en vacaciones, por lo que entran primero.
 
     Reglas:
     - El límite de 4 horas se aplica solo a horas teóricas (ver
@@ -380,6 +402,8 @@ def calcular_ruta_vacaciones(
         Si la malla tiene ciclos de prerequisitos.
     """
     aprobados_acumulado = set(aprobados or [])
+    excluir_codigos = set(excluir_codigos or [])
+    prioritarios = set(prioritarios or [])
     por_codigo = {curso["codigo"]: curso for curso in cursos}
 
     grafo = _construir_grafo(cursos)
@@ -429,7 +453,7 @@ def calcular_ruta_vacaciones(
                 # Curso publicado en el horario vacacional pero que no
                 # pertenece a esta malla curricular: se ignora.
                 continue
-            if codigo in aprobados_acumulado:
+            if codigo in aprobados_acumulado or codigo in excluir_codigos:
                 continue
 
             curso = por_codigo[codigo]
@@ -452,6 +476,7 @@ def calcular_ruta_vacaciones(
         # desempate final puramente determinista (evita que el resultado
         # cambie de una ejecución a otra cuando hay empates reales).
         candidatos.sort(key=lambda c: (
+            0 if c in prioritarios else 1,
             0 if _es_obligatorio(por_codigo[c]) else 1,
             -_horas_teoricas_periodo(c),
             por_codigo[c].get("semestre", 0),
@@ -487,6 +512,199 @@ def calcular_ruta_vacaciones(
 
 
 # ---------------------------------------------------------------------------
+# Cursos no obligatorios: social humanística, idiomas técnicos y créditos
+# ---------------------------------------------------------------------------
+
+SOCIAL_HUMANISTICA_CODIGOS = ("0017", "0019", "0010", "0018", "0001")
+"""Cursos del área Social Humanística que existen en las mallas cargadas:
+Social Humanística 1 y 2, Lógica, Filosofía de la Ciencia y Ética Profesional.
+Si agregas otro curso del área a las mallas, basta con añadir su código aquí."""
+
+SOCIAL_HUMANISTICA_REQUERIDOS = 8
+"""Para cerrar pénsum se deben completar 8 CRÉDITOS de los 10 disponibles del
+área (Social Humanística 1 y 2 = 3+3, Lógica = 1, Filosofía = 1, Ética = 2)."""
+
+IDIOMA_TECNICO_CODIGOS = ("0006", "0008", "0009", "0011")
+
+CREDITOS_PENSUM_10_SEMESTRES = 300
+CREDITOS_PENSUM_12_SEMESTRES = 360
+
+
+def tipo_de_curso(curso: dict) -> str:
+    """'social_humanistica' | 'idioma' | 'obligatorio' | 'optativo'."""
+    if curso.get("codigo") in SOCIAL_HUMANISTICA_CODIGOS:
+        return "social_humanistica"
+    if curso.get("codigo") in IDIOMA_TECNICO_CODIGOS:
+        return "idioma"
+    return "obligatorio" if _es_obligatorio(curso) else "optativo"
+
+
+def creditos_requeridos_pensum(cursos: list[dict]) -> int:
+    """300 créditos (10 semestres) o 360 (carreras de 12 semestres)."""
+    ultimo = max((c.get("semestre", 0) or 0 for c in cursos), default=0)
+    return CREDITOS_PENSUM_12_SEMESTRES if ultimo >= 11 else CREDITOS_PENSUM_10_SEMESTRES
+
+
+def excluir_cursos(
+    cursos: list[dict],
+    excluidos: Iterable[str],
+    aprobados: Iterable[str] = (),
+) -> tuple[list[dict], set[str]]:
+    """
+    Quita de la malla los cursos que el estudiante no quiere llevar y, en
+    cadena, todo lo que dependa de ellos (no podría cursarse sin ellos).
+    Nunca se quita un curso ya aprobado.
+
+    Retorna (cursos_filtrados, codigos_removidos).
+    """
+    aprobados = set(aprobados)
+    hijos: dict[str, list[str]] = {}
+    for curso in cursos:
+        for prereq in curso.get("prerequisitos", []):
+            hijos.setdefault(prereq, []).append(curso["codigo"])
+
+    existentes = {c["codigo"] for c in cursos}
+    removidos: set[str] = set()
+    pila = [c for c in set(excluidos) if c in existentes and c not in aprobados]
+    while pila:
+        actual = pila.pop()
+        if actual in removidos:
+            continue
+        removidos.add(actual)
+        pila.extend(h for h in hijos.get(actual, []) if h not in aprobados)
+
+    return [c for c in cursos if c["codigo"] not in removidos], removidos
+
+
+def seleccionar_cursos_objetivo(
+    cursos: list[dict],
+    aprobados: Iterable[str],
+    incluir_idiomas: bool = False,
+) -> tuple[list[dict], dict]:
+    """
+    Decide qué cursos NO obligatorios entran al plan para poder cerrar
+    pénsum. Devuelve una COPIA de la malla donde esos cursos quedan con
+    "obligatorio": true (así los planifican las funciones existentes) y un
+    diccionario informativo.
+
+    Reglas:
+    1. Social Humanística: entre lo aprobado y lo planificado deben sumar 8
+       cursos del área (SOCIAL_HUMANISTICA_CODIGOS).
+    2. Idiomas técnicos: solo entran si `incluir_idiomas` es True.
+    3. Créditos: aprobados + planificados deben llegar a 300 (o 360 en
+       carreras de 12 semestres). Si faltan, se completan con los optativos
+       más convenientes: primero los que no son deportes, luego el semestre
+       oficial más bajo y más créditos. Los idiomas técnicos solo se usan
+       para completar si el estudiante los pidió.
+       Si un optativo tiene prerequisitos optativos, estos se agregan también.
+    """
+    copia = [dict(c) for c in cursos]
+    por_codigo = {c["codigo"]: c for c in copia}
+    aprobados = {a for a in aprobados if a in por_codigo}
+
+    def _en_plan(codigo: str) -> bool:
+        return codigo in aprobados or _es_obligatorio(por_codigo[codigo])
+
+    agregados: list[str] = []
+
+    def _agregar_con_prerequisitos(codigo: str) -> bool:
+        """Agrega el curso y sus prerequisitos optativos pendientes."""
+        if codigo in aprobados or _es_obligatorio(por_codigo[codigo]):
+            return True
+        cadena, pila = [], [codigo]
+        while pila:
+            actual = pila.pop()
+            if actual in aprobados or _es_obligatorio(por_codigo[actual]) or actual in cadena:
+                continue
+            cadena.append(actual)
+            for prereq in por_codigo[actual].get("prerequisitos", []):
+                if prereq not in por_codigo:
+                    return False
+                pila.append(prereq)
+        for c in cadena:
+            por_codigo[c]["obligatorio"] = True
+            agregados.append(c)
+        return True
+
+    # 1) Social Humanística
+    sh_en_malla = sorted(
+        (c for c in copia if c["codigo"] in SOCIAL_HUMANISTICA_CODIGOS),
+        key=lambda c: (c.get("semestre", 99), c["codigo"]),
+    )
+
+    def _creditos_sh() -> int:
+        return sum(c.get("creditos", 0) for c in sh_en_malla if _en_plan(c["codigo"]))
+
+    for curso in sh_en_malla:
+        if _creditos_sh() >= SOCIAL_HUMANISTICA_REQUERIDOS:
+            break
+        if not _en_plan(curso["codigo"]):
+            _agregar_con_prerequisitos(curso["codigo"])
+
+    # 2) Idiomas técnicos
+    if incluir_idiomas:
+        for curso in sorted(copia, key=lambda c: (c.get("semestre", 99), c["codigo"])):
+            if curso["codigo"] in IDIOMA_TECNICO_CODIGOS:
+                _agregar_con_prerequisitos(curso["codigo"])
+
+    # 3) Créditos totales
+    meta = creditos_requeridos_pensum(cursos)
+
+    def _creditos_plan() -> int:
+        return sum(c.get("creditos", 0) for c in copia if _en_plan(c["codigo"]))
+
+    if _creditos_plan() < meta:
+        candidatos = [
+            c for c in copia
+            if not _en_plan(c["codigo"])
+            and c["codigo"] not in IDIOMA_TECNICO_CODIGOS
+            and c["codigo"] not in SOCIAL_HUMANISTICA_CODIGOS
+        ]
+        candidatos.sort(key=lambda c: (
+            "deporte" in _normalizar_texto(c.get("nombre", "")),
+            c.get("semestre", 99),
+            -c.get("creditos", 0),
+            c["codigo"],
+        ))
+        for curso in candidatos:
+            if _creditos_plan() >= meta:
+                break
+            _agregar_con_prerequisitos(curso["codigo"])
+
+    idiomas_por_necesidad = False
+    if _creditos_plan() < meta and not incluir_idiomas:
+        # Último recurso: sin idiomas no alcanzan los créditos del pénsum.
+        for curso in sorted(copia, key=lambda c: (c.get("semestre", 99), c["codigo"])):
+            if _creditos_plan() >= meta:
+                break
+            if curso["codigo"] in IDIOMA_TECNICO_CODIGOS and not _en_plan(curso["codigo"]):
+                if _agregar_con_prerequisitos(curso["codigo"]):
+                    idiomas_por_necesidad = True
+
+    total_plan = _creditos_plan()
+    sh_total = _creditos_sh()
+    info = {
+        "creditos_requeridos": meta,
+        "creditos_totales_plan": total_plan,
+        "creditos_faltantes": max(0, meta - total_plan),
+        "social_humanistica_requeridos": SOCIAL_HUMANISTICA_REQUERIDOS,
+        "social_humanistica_en_plan": sh_total,
+        "social_humanistica_faltantes": max(0, SOCIAL_HUMANISTICA_REQUERIDOS - sh_total),
+        "optativos_agregados": agregados,
+        "idiomas_agregados_por_necesidad": idiomas_por_necesidad,
+    }
+    return copia, info
+
+
+def _normalizar_texto(texto: str) -> str:
+    import unicodedata
+    texto = (texto or "").lower()
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(ch)
+    )
+
+
+# ---------------------------------------------------------------------------
 # Plan hasta el cierre de la carrera (todos los semestres que faltan)
 # ---------------------------------------------------------------------------
 
@@ -499,12 +717,10 @@ MODOS_PLAN_ANUAL = {"avanzar", "nivelarse", "tiempo_normal"}
                     interpretación, ya que maximizar créditos priorizando
                     siempre lo más atrasado primero es simultáneamente la
                     forma más rápida de graduarse Y de ponerse al día.
-- "tiempo_normal":  no adelanta más allá de la carga oficial del pénsum para
-                    el semestre que le toca (no se "adelanta" aunque el
-                    promedio le permitiría más). Si el estudiante va
-                    atrasado, este modo sí puede resultar en semestres
-                    adicionales al cierre normal, porque nunca sobrecarga
-                    para recuperar el atraso más rápido.
+- "tiempo_normal":  puede adelantar cursos, pero no termina antes de la
+                    duración normal del pénsum: reparte lo pendiente en
+                    partes iguales hasta ese semestre (sin pasar del límite
+                    de créditos que permite el promedio).
 """
 
 MAX_SEMESTRES_SEGURIDAD = 40
@@ -512,7 +728,7 @@ MAX_SEMESTRES_SEGURIDAD = 40
 vez de quedar en un ciclo infinito."""
 
 
-def calcular_plan_restante(
+def _plan_restante(
     cursos: list[dict],
     periodos_vacacionales: list[dict],
     semestre_actual: int,
@@ -520,6 +736,11 @@ def calcular_plan_restante(
     reprobados: Iterable[str] | None = None,
     limite_creditos: int = 37,
     modo: str = "nivelarse",
+    iniciar_en_vacaciones: bool = False,
+    duracion_normal_pensum: int | None = None,
+    semestres_objetivo: int | None = None,
+    solo_vacaciones: Iterable[str] | None = None,
+    solo_semestre: Iterable[str] | None = None,
 ) -> dict:
     """
     Arma el plan completo desde donde va el estudiante hasta el cierre de
@@ -595,6 +816,8 @@ def calcular_plan_restante(
 
     aprob_actual = set(aprobados or [])
     reprob_actual = set(reprobados or [])
+    solo_vacaciones = set(solo_vacaciones or [])
+    solo_semestre = set(solo_semestre or [])
 
     atrasados_iniciales = sorted(
         codigo for codigo, curso in por_codigo.items()
@@ -603,10 +826,11 @@ def calcular_plan_restante(
         and (codigo not in aprob_actual or codigo in reprob_actual)
     )
 
-    duracion_normal_pensum = max(
-        (curso.get("semestre", 0) for curso in cursos if _es_obligatorio(curso)),
-        default=semestre_actual,
-    )
+    if duracion_normal_pensum is None:
+        duracion_normal_pensum = max(
+            (curso.get("semestre", 0) for curso in cursos if _es_obligatorio(curso)),
+            default=semestre_actual,
+        )
 
     def _pendientes_obligatorios() -> set[str]:
         return {
@@ -615,16 +839,25 @@ def calcular_plan_restante(
             and (curso["codigo"] not in aprob_actual or curso["codigo"] in reprob_actual)
         }
 
-    def _creditos_oficiales_semestre(semestre_oficial: int) -> int:
-        return sum(
-            curso.get("creditos", 0) for curso in cursos
-            if _es_obligatorio(curso) and curso.get("semestre") == semestre_oficial
-        )
-
     periodos_out: dict[str, list[dict]] = {}
-    semestre_oficial_objetivo = semestre_actual
     vac_idx = 0
     indice_semestre = 0
+
+    # Si el estudiante está ahora en vacaciones (semestre_actual es el
+    # semestre que sigue), el primer periodo del plan es ese periodo vacacional.
+    if iniciar_en_vacaciones and _pendientes_obligatorios() and vac_idx < len(periodos_vacacionales):
+        periodo = periodos_vacacionales[vac_idx]
+        vac_idx += 1
+        resultado_vac = calcular_ruta_vacaciones(
+            cursos, [periodo], aprobados=aprob_actual,
+            excluir_codigos=solo_semestre, prioritarios=solo_vacaciones,
+        )
+        clave_vac = f"Vacaciones de semestre {semestre_actual - 1}"
+        resultado_vac = {clave_vac: next(iter(resultado_vac.values()))}
+        periodos_out[clave_vac] = resultado_vac[clave_vac]
+        for curso in resultado_vac[clave_vac]:
+            aprob_actual.add(curso["codigo"])
+            reprob_actual.discard(curso["codigo"])
 
     while _pendientes_obligatorios():
         if indice_semestre >= MAX_SEMESTRES_SEGURIDAD:
@@ -637,16 +870,24 @@ def calcular_plan_restante(
 
         limite_efectivo = limite_creditos
         if modo == "tiempo_normal":
-            normal = _creditos_oficiales_semestre(semestre_oficial_objetivo)
-            if normal:
-                limite_efectivo = min(limite_creditos, normal)
-        semestre_oficial_objetivo += 1
+            # Se puede adelantar cursos, pero sin terminar antes de la
+            # duración normal del pénsum: se reparte lo pendiente en partes
+            # iguales entre los semestres que quedan hasta ese cierre
+            # (nunca más que el límite que permite el promedio).
+            pendientes = _pendientes_obligatorios() - solo_vacaciones
+            total_objetivo = semestres_objetivo or (duracion_normal_pensum - semestre_actual + 1)
+            semestres_restantes = max(1, total_objetivo - indice_semestre)
+            creditos_pendientes = sum(por_codigo[c].get("creditos", 0) for c in pendientes)
+            carga = -(-creditos_pendientes // semestres_restantes)
+            mayor_curso = max((por_codigo[c].get("creditos", 0) for c in pendientes), default=0)
+            limite_efectivo = min(limite_creditos, max(carga, mayor_curso, 1))
 
         parcial = calcular_ruta_regular(
             cursos,
             aprobados=aprob_actual,
             reprobados=reprob_actual,
             limite_creditos=limite_efectivo,
+            solo_vacaciones=solo_vacaciones,
         )
         primera_clave = next(iter(parcial))
         cursos_semestre = parcial[primera_clave]
@@ -662,9 +903,11 @@ def calcular_plan_restante(
             periodo = periodos_vacacionales[vac_idx]
             vac_idx += 1
             resultado_vac = calcular_ruta_vacaciones(
-                cursos, [periodo], aprobados=aprob_actual
+                cursos, [periodo], aprobados=aprob_actual,
+                excluir_codigos=solo_semestre, prioritarios=solo_vacaciones,
             )
-            clave_vac = next(iter(resultado_vac))
+            clave_vac = f"Vacaciones de semestre {semestre_actual + indice_semestre - 1}"
+            resultado_vac = {clave_vac: next(iter(resultado_vac.values()))}
             periodos_out[clave_vac] = resultado_vac[clave_vac]
             for curso in resultado_vac[clave_vac]:
                 aprob_actual.add(curso["codigo"])
@@ -682,6 +925,56 @@ def calcular_plan_restante(
         "semestres_extra": semestres_extra,
         "modo": modo,
     }
+
+def calcular_plan_restante(
+    cursos: list[dict],
+    periodos_vacacionales: list[dict],
+    semestre_actual: int,
+    aprobados: Iterable[str] | None = None,
+    reprobados: Iterable[str] | None = None,
+    limite_creditos: int = 37,
+    modo: str = "nivelarse",
+    iniciar_en_vacaciones: bool = False,
+    duracion_normal_pensum: int | None = None,
+    solo_vacaciones: Iterable[str] | None = None,
+    solo_semestre: Iterable[str] | None = None,
+) -> dict:
+    """
+    Igual que `_plan_restante` (ver su documentación). Para los modos
+    "avanzar" y "nivelarse" es exactamente ese cálculo. Para "tiempo_normal"
+    se busca el reparto de carga que cierre justo en la duración normal del
+    pénsum (o lo más pronto posible si el estudiante ya no llega a tiempo),
+    sin terminar antes.
+    """
+    argumentos = dict(
+        cursos=cursos,
+        periodos_vacacionales=periodos_vacacionales,
+        semestre_actual=semestre_actual,
+        aprobados=aprobados,
+        reprobados=reprobados,
+        limite_creditos=limite_creditos,
+        iniciar_en_vacaciones=iniciar_en_vacaciones,
+        duracion_normal_pensum=duracion_normal_pensum,
+        solo_vacaciones=solo_vacaciones,
+        solo_semestre=solo_semestre,
+    )
+    if modo != "tiempo_normal":
+        return _plan_restante(modo=modo, **argumentos)
+
+    rapido = _plan_restante(modo="nivelarse", **argumentos)
+    duracion = rapido["duracion_normal_pensum"]
+    meta = max(duracion - semestre_actual + 1, rapido["semestres_cursados"])
+
+    for objetivo in range(meta, max(rapido["semestres_cursados"], 1) - 1, -1):
+        plan = _plan_restante(modo="tiempo_normal", semestres_objetivo=objetivo, **argumentos)
+        if plan["semestres_cursados"] == meta:
+            return plan
+
+    # Ningún reparto cierra exactamente en la meta (por cadenas de
+    # prerequisitos): se usa el plan más rápido posible, que nunca es peor.
+    rapido["modo"] = "tiempo_normal"
+    return rapido
+
 
 def sanear_aprobados_por_prerequisitos(
     cursos: list[dict],
