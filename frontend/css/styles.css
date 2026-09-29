@@ -17,7 +17,32 @@ body {
 .topbar {
   background-color: #185fa5;
   color: #ffffff;
-  padding: 16px 32px;
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar-marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  height: 44px;
+  width: 44px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  padding: 2px;
+  object-fit: contain;
+}
+
+.topbar-usac {
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
 }
 
 .topbar-brand {
@@ -396,4 +421,23 @@ body {
   font-size: 10px;
   font-weight: 600;
   margin-top: 3px;
+}
+
+.acciones-formulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-secundario {
+  background-color: #ffffff;
+  color: #185fa5;
+  border: 1px solid #185fa5;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 10px 16px; }
+  .topbar-logo, .topbar-usac { height: 38px; width: 38px; }
 }

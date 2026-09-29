@@ -4,12 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrackIng</title>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="img/favicon.png">
+<link rel="shortcut icon" href="img/favicon.ico">
+<link rel="apple-touch-icon" href="img/logo_trackIng_icono.png">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
 <header class="topbar">
-  <span class="topbar-brand">TrackIng</span>
+  <div class="topbar-marca">
+    <img src="img/logo_trackIng_icono.png" alt="Logo de TrackIng" class="topbar-logo">
+    <span class="topbar-brand">TrackIng</span>
+  </div>
+  <img src="img/logo_usac.png" alt="Universidad de San Carlos de Guatemala" class="topbar-usac">
 </header>
 
 <main id="app">
@@ -65,7 +73,10 @@
       <div id="opciones-modo" class="opciones-modo"></div>
     </div>
 
-    <button id="btn-calcular" class="btn btn-primario">Calcular mi ruta</button>
+    <div class="acciones-formulario">
+      <button id="btn-calcular" class="btn btn-primario">Calcular mi ruta</button>
+      <button id="btn-limpiar" class="btn btn-secundario" type="button">Limpiar campos</button>
+    </div>
     <p id="mensaje-error" class="mensaje-error oculto"></p>
   </section>
 
@@ -74,6 +85,9 @@
     <h1>Tu ruta hasta cerrar la carrera</h1>
     <div id="resumen-plan" class="resumen-plan"></div>
     <div id="grid-resultado" class="grid-resultado"></div>
+    <div class="acciones-formulario">
+      <button id="btn-limpiar-resultado" class="btn btn-secundario" type="button">Limpiar y hacer otra ruta</button>
+    </div>
   </section>
 
 </main>

@@ -44,6 +44,8 @@ const btnVolverCarreras = document.getElementById("btn-volver-carreras");
 const btnVolverFormulario = document.getElementById("btn-volver-formulario");
 const resumenPlan = document.getElementById("resumen-plan");
 const gridResultado = document.getElementById("grid-resultado");
+const btnLimpiar = document.getElementById("btn-limpiar");
+const btnLimpiarResultado = document.getElementById("btn-limpiar-resultado");
 
 function mostrarPantalla(pantalla) {
   [pantallaCarreras, pantallaFormulario, pantallaResultado].forEach(p => p.classList.add("oculto"));
@@ -108,7 +110,6 @@ function construirSelectSemestre() {
     opcion.textContent = `Semestre ${numero}`;
     selectSemestre.appendChild(opcion);
 
-    // Vacaciones que siguen al semestre `numero` (también después del último).
     const vacaciones = document.createElement("option");
     vacaciones.value = `v-${numero}`;
     vacaciones.textContent = `Vacaciones de semestre ${numero}`;
@@ -117,9 +118,6 @@ function construirSelectSemestre() {
   selectSemestre.value = `s-${semestres[0]}`;
   aplicarSeleccionPeriodo();
 }
-
-// Si se elige "Vacaciones de semestre N", el semestre N ya está terminado: el
-// siguiente semestre a cursar es N+1 y el plan arranca con esas vacaciones.
 function aplicarSeleccionPeriodo() {
   const [tipo, numero] = selectSemestre.value.split("-");
   state.iniciarEnVacaciones = tipo === "v";
@@ -149,10 +147,6 @@ function recalcularMarcadosPorDefecto() {
   );
 }
 
-// Mapa codigo -> [codigos de cursos que lo tienen como prerequisito directo].
-// Se usa para, al desmarcar un curso, encontrar en cadena todo lo que
-// dependía de él (igual que hace el backend en sanear_aprobados_por_prerequisitos,
-// pero aquí de forma inmediata mientras el usuario marca/desmarca).
 function construirDependientesDirectos(cursos) {
   const mapa = new Map();
   cursos.forEach(curso => {
@@ -164,8 +158,6 @@ function construirDependientesDirectos(cursos) {
   return mapa;
 }
 
-// Todos los cursos que dependen de `codigo`, directa o indirectamente
-// (recorrido en el grafo de dependientes).
 function obtenerDependientesTransitivos(codigo) {
   const visitados = new Set();
   const pila = [...(state.dependientesDirectos.get(codigo) || [])];
@@ -178,9 +170,6 @@ function obtenerDependientesTransitivos(codigo) {
   return visitados;
 }
 
-// Todos los prerequisitos de `codigo`, directos e indirectos (subiendo la
-// cadena). No tiene sentido marcar un curso como aprobado si no se han
-// marcado también los cursos que necesitaba antes.
 function obtenerPrerequisitosTransitivos(codigo) {
   const visitados = new Set();
   const curso = state.cursosPorCodigo.get(codigo);
@@ -199,7 +188,6 @@ function renderizarGridCursos() {
   gridCursos.innerHTML = "";
   const semestres = [...new Set(state.cursos.map(c => c.semestre).filter(s => s != null))].sort((a, b) => a - b);
 
-  // Cursos que dependen de uno excluido: tampoco se podrán llevar.
   const excluidosArrastrados = new Set();
   state.cursos.forEach(c => {
     if (estaDescartado(c.codigo)) {
@@ -254,8 +242,6 @@ function renderizarGridCursos() {
   });
 }
 
-// Un curso está descartado si se eligió "Descartar" o si se marcó como
-// "no quiero llevarlo" tanto en semestre como en vacaciones.
 function estaDescartado(codigo) {
   return state.descartados.has(codigo)
     || (state.noSemestre.has(codigo) && state.noVacaciones.has(codigo));
@@ -270,7 +256,7 @@ function crearPuntoObligatorio() {
 }
 
 function alternarDescartado(codigo) {
-  if (state.marcados.has(codigo)) return; // un curso ya ganado no se descarta
+  if (state.marcados.has(codigo)) return;
   if (estaDescartado(codigo)) {
     state.descartados.delete(codigo);
     state.noSemestre.delete(codigo);
@@ -284,7 +270,7 @@ function alternarDescartado(codigo) {
 }
 
 function alternarRestriccion(codigo, conjunto) {
-  if (state.marcados.has(codigo)) return; // un curso ya ganado no se restringe
+  if (state.marcados.has(codigo)) return; 
   state.descartados.delete(codigo);
   if (conjunto.has(codigo)) conjunto.delete(codigo);
   else conjunto.add(codigo);
@@ -305,14 +291,9 @@ function alternarMarcado(codigo) {
     return;
   }
   if (state.marcados.has(codigo)) {
-    // Al desmarcar, se arrastra en cascada: cualquier curso que dependía
-    // (directa o indirectamente) de este ya no puede darse por ganado.
     state.marcados.delete(codigo);
     obtenerDependientesTransitivos(codigo).forEach(dep => state.marcados.delete(dep));
   } else {
-    // Al marcar, se arrastra hacia atrás: no se puede haber aprobado un
-    // curso sin haber aprobado antes sus prerequisitos (directos e
-    // indirectos), así que se marcan también automáticamente.
     state.marcados.add(codigo);
     obtenerPrerequisitosTransitivos(codigo).forEach(prereq => state.marcados.add(prereq));
     state.marcados.forEach(marcado => {
@@ -321,8 +302,6 @@ function alternarMarcado(codigo) {
       state.descartados.delete(marcado);
     });
   }
-  // Se re-renderiza toda la grilla (no solo el bloque clickeado) porque la
-  // cascada puede haber cambiado el estado visual de varios cursos a la vez.
   renderizarGridCursos();
 }
 
@@ -561,6 +540,31 @@ function renderizarResultado(datos) {
     gridResultado.appendChild(columna);
   });
 }
+
+function limpiarCampos() {
+  state.noSemestre = new Set();
+  state.noVacaciones = new Set();
+  state.descartados = new Set();
+  state.modoMarcado = "ganados";
+  state.modo = "nivelarse";
+  document.querySelector('input[name="modo-marcado"][value="ganados"]').checked = true;
+
+  checkIdiomas.checked = false;
+  inputPromedio.value = "";
+  mensajeError.classList.add("oculto");
+  mensajeError.textContent = "";
+
+  resumenPlan.innerHTML = "";
+  gridResultado.innerHTML = "";
+
+  construirSelectSemestre();
+  renderizarOpcionesModo();
+  mostrarPantalla(pantallaFormulario);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+btnLimpiar.addEventListener("click", limpiarCampos);
+btnLimpiarResultado.addEventListener("click", limpiarCampos);
 
 btnCalcular.addEventListener("click", calcularRuta);
 
