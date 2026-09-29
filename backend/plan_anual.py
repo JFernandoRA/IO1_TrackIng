@@ -1,40 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-plan_anual.py
-=============
-Script de consola: "¿qué cursos me faltan para cerrar la carrera?"
-
-A diferencia de test_algoritmo.py (que corre 3 casos de demostración ya
-armados), este script es INTERACTIVO: pregunta directamente los datos del
-estudiante y entrega la ruta COMPLETA desde el semestre en el que va hasta
-el cierre de la carrera (Semestre, Vacaciones, Semestre, Vacaciones, ...),
-calculada con calcular_plan_restante() de ruta_optima.py. Si el estudiante
-va atrasado y el límite de créditos de su promedio no alcanza para
-ponerse al día dentro de la duración normal del pénsum, el plan
-simplemente agrega los semestres adicionales que hagan falta y al final
-se informa cuántos son.
-
-Flujo:
-  1. Elegir carrera (malla curricular en data/*.json).
-  2. Indicar en qué semestre del pénsum vas actualmente.
-     -> Se asume automáticamente que ya ganaste todos los cursos
-        obligatorios de semestres anteriores, EXCEPTO los que indiques
-        como pendientes/reprobados en el siguiente paso.
-  3. Indicar cursos pendientes o reprobados de semestres anteriores
-     (por ejemplo, "Física 1" si vas en 6to pero aún no la ganas).
-  4. (Opcional) Indicar cursos que ya adelantaste de semestres futuros.
-  5. Indicar tu promedio acumulado (0-100) -> define el límite de
-     créditos por semestre.
-  6. Elegir el objetivo: adelantarte, nivelarte, o mantener el tiempo
-     normal de cierre de la carrera.
-
-Salida: la ruta completa hasta el cierre impresa en consola, más un
-resumen de en qué semestre proyecta que te gradúas y cuántos semestres
-extra (si aplica) por encima de la duración normal del pénsum.
-
-Ejecutar con:  python plan_anual.py
-"""
-
 from __future__ import annotations
 
 import sys
@@ -102,10 +65,6 @@ def _elegir_entre_coincidencias(coincidencias: list[dict], fragmento: str) -> di
 
 
 def solicitar_cursos_por_nombre(cursos: list[dict], instruccion: str) -> set[str]:
-    """
-    Pide nombres de cursos uno por uno (o fragmentos de nombre) hasta que
-    el usuario escriba 'listo'. Devuelve el conjunto de códigos elegidos.
-    """
     print(f"\n{instruccion}")
     print("  (Escribe parte del nombre del curso, por ejemplo 'fisica 1'. "
           "Escribe 'listo' cuando termines.)")
@@ -195,25 +154,17 @@ def main() -> None:
     print("TrackIng - Plan hasta el cierre de la carrera")
     print("=" * 70)
 
-    # 1) Carrera. Se inyectan de una vez los prerequisitos de los
-    # optativos habilitantes, y de ahí en adelante se trabaja SIEMPRE
-    # sobre esta versión de la malla (así los códigos y prerequisitos son
-    # consistentes en todos los pasos: búsqueda, saneamiento y cálculo).
     malla_json, _archivo_malla = seleccionar_malla_interactiva()
     cursos_malla = inyectar_prerequisitos_optativos(malla_json["cursos"])
     por_codigo = {curso["codigo"]: curso for curso in cursos_malla}
 
-    # 2) Semestre actual
     semestre_actual = solicitar_semestre_actual(cursos_malla)
 
-    # Se asume ganado todo obligatorio de semestres anteriores al actual,
-    # salvo lo que el usuario marque como pendiente/reprobado a continuación.
     aprobados = {
         curso["codigo"] for curso in cursos_malla
         if curso.get("obligatorio", True) and curso.get("semestre", 0) < semestre_actual
     }
 
-    # 3) Cursos pendientes / reprobados de semestres anteriores
     reprobados = solicitar_cursos_por_nombre(
         cursos_malla,
         f"¿Hay cursos de semestres anteriores al {semestre_actual} que AÚN NO "
@@ -221,7 +172,6 @@ def main() -> None:
     )
     aprobados -= reprobados
 
-    # 4) Cursos adelantados (opcional)
     adelantados = solicitar_cursos_por_nombre(
         cursos_malla,
         "¿Ya llevas ganado algún curso de semestres FUTUROS por adelantado? "
@@ -230,14 +180,6 @@ def main() -> None:
     aprobados |= adelantados
     reprobados -= adelantados
 
-    # 4.5) Saneamiento por arrastre de prerequisitos: el paso 2 asume que
-    # todo lo anterior al semestre actual está ganado, pero eso es
-    # inconsistente si el curso reprobado/pendiente tiene postrequisitos
-    # que "numéricamente" caen en un semestre anterior al actual. Por
-    # ejemplo, si perdiste Física 1 o Matemática Intermedia 3, tampoco
-    # pudiste haber ganado Física 2, Matemática Aplicada 1, ni nada que
-    # dependa de esos cursos, aunque su "semestre" oficial sea menor al
-    # semestre en el que vas ahora. Esto se corrige de forma transitiva.
     aprobados, removidos_por_arrastre = sanear_aprobados_por_prerequisitos(
         cursos_malla, aprobados
     )
@@ -249,20 +191,15 @@ def main() -> None:
             curso = por_codigo.get(codigo, {})
             print(f"    - {codigo} - {curso.get('nombre', '(desconocido)')}")
 
-    # 5) Promedio -> límite de créditos
     promedio = solicitar_promedio_acumulado()
     limite_creditos = calcular_limite_creditos(promedio)
     print(f"\nLímite de créditos por semestre según tu promedio ({promedio:.2f}): "
           f"{limite_creditos} créditos.")
 
-    # 6) Objetivo
     modo = solicitar_modo()
 
-    # 7) Periodos vacacionales (se piden de sobra: la carrera restante
-    # puede necesitar más de 2 ciclos si el estudiante va muy atrasado).
     periodos_vacacionales = cargar_periodos_vacacionales()
 
-    # 8) Calcular el plan hasta el cierre de la carrera
     try:
         plan = calcular_plan_restante(
             cursos_malla,

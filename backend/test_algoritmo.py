@@ -1,53 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-test_algoritmo.py
-==================
-Script de pruebas / demostración para ruta_optima.py.
-
-Diseñado para leer las mallas curriculares reales de la Facultad de
-Ingeniería de la USAC (exportadas de redesEstudio), ubicadas en
-backend/data/*.json, con la forma:
-
-    {
-        "carrera": "Ingeniería en Ciencias y Sistemas",
-        "carrera_id": "ingenieriaEnCienciasYSistemas",
-        "pensum": "CLAR",
-        "vigente_desde": 2025,
-        "cursos": [
-            {"codigo": "0101", "nombre": "...", "creditos": 9,
-             "semestre": 1, "prerequisitos": [], "obligatorio": true},
-            ...
-        ]
-    }
-
-Cualquier archivo .json dentro de data/ (excepto horarios_vacaciones.json)
-se trata como una malla curricular seleccionable.
-
-Flujo de main():
-  1. Selección interactiva de malla curricular (data/*.json).
-  2. Solicita el promedio acumulado del usuario (0-100) y calcula el
-     límite de créditos dinámico:
-         > 85            -> 42 créditos
-         71 - 85         -> 37 créditos
-         < 71             -> 32 créditos
-  3. Carga automáticamente data/horarios_vacaciones.json.
-  4. Inyecta como obligatorios temporales cualquier optativo que sea
-     prerequisito de un obligatorio.
-  5. Ejecuta 3 casos de prueba secuenciales:
-       Caso 1: estudiante nuevo (ruta regular + vacaciones intercaladas)
-       Caso 2: estudiante que perdió "Matemática Básica 1" (se busca por
-               nombre en la malla elegida, ya que el código varía entre
-               carreras) -> confirma reprogramación dinámica, no fija a
-               "Semestre_1"
-       Caso 3: estudiante con promedio bajo (<71) -> 32 créditos/slot
-
-Cada caso imprime totales de créditos/horas por periodo y corre
-verificaciones automáticas de prerequisitos y límites.
-
-Compatible con Windows, Python 3.13 y NetworkX 3.6.1. Sin dependencias
-adicionales a las de ruta_optima.py.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -71,11 +21,6 @@ from utilidades import (
 
 def verificar_prerequisitos(ruta: dict, malla_cursos: list[dict],
                              aprobados_iniciales: set[str] | None = None) -> list[str]:
-    """
-    Recorre la ruta periodo por periodo y confirma que ningún curso se
-    programó sin tener sus prerequisitos satisfechos por periodos
-    anteriores (o por lo ya aprobado al inicio).
-    """
     por_codigo = {curso["codigo"]: curso for curso in malla_cursos}
     aprobados_acumulado = set(aprobados_iniciales or [])
     violaciones = []
@@ -146,12 +91,6 @@ def construir_ruta_intercalada(
     reprobados_iniciales: set[str] | None = None,
     aplicar_vacaciones_cada_n_semestres: int = 2,
 ) -> dict:
-    """
-    Intercala periodos vacacionales dentro de la ruta regular llamando a
-    ambas funciones de forma independiente y combinando sus resultados
-    (ambas retornan la misma estructura {clave: [cursos]}, por lo que se
-    pueden fusionar directamente en un solo diccionario ordenado).
-    """
     aprobados = set(aprobados_iniciales or [])
     reprobados = set(reprobados_iniciales or [])
     ruta_combinada: dict[str, list[dict]] = {}
@@ -169,9 +108,6 @@ def construir_ruta_intercalada(
             break
 
         semestre_num += 1
-        # Se recalcula la ruta regular completa con el estado actual y se
-        # toma solo el primer slot resultante: así cada nuevo semestre
-        # aprovecha lo que ya se adelantó en vacaciones.
         parcial = calcular_ruta_regular(
             malla_inyectada,
             aprobados=aprobados,
@@ -225,9 +161,6 @@ def caso_1_estudiante_nuevo(malla_inyectada, periodos_vacacionales, limite_credi
     violaciones_prereq = verificar_prerequisitos(ruta, malla_inyectada)
     imprimir_verificaciones("Prerequisitos", violaciones_prereq)
 
-    # Los periodos "Semestre_*" respetan limite_creditos; el resto (los
-    # periodos vacacionales, cualquiera sea su nombre) respeta el límite
-    # de horas teóricas y máximo de cursos.
     claves_semestre = {clave: cursos for clave, cursos in ruta.items()
                         if clave.startswith("Semestre_")}
     claves_vacaciones = {clave: cursos for clave, cursos in ruta.items()
@@ -247,8 +180,6 @@ def caso_2_perdio_matematica_basica_1(malla_inyectada, limite_creditos):
     print("CASO 2: Estudiante que perdió 'Matemática Básica 1'")
     print("=" * 70)
 
-    # El código varía entre carreras, así que el curso se busca por
-    # nombre dentro de la malla elegida en tiempo de ejecución.
     curso_objetivo = buscar_curso_por_nombre(
         malla_inyectada, ["matematica", "basica", "1"]
     )
@@ -271,8 +202,6 @@ def caso_2_perdio_matematica_basica_1(malla_inyectada, limite_creditos):
     print(f"  Curso simulado como reprobado: '{codigo_objetivo}' - "
           f"{curso_objetivo['nombre']} (semestre oficial {semestre_objetivo})")
 
-    # El estudiante ya aprobó el resto de cursos obligatorios de ese mismo
-    # semestre oficial, pero reprobó el curso objetivo.
     aprobados = {
         c["codigo"] for c in malla_inyectada
         if c.get("semestre") == semestre_objetivo
@@ -358,9 +287,6 @@ def caso_3_promedio_bajo(malla_inyectada):
     violaciones_limite = verificar_limite_creditos(ruta_bajo, limite_bajo)
     imprimir_verificaciones(f"Límite de créditos ({limite_bajo})", violaciones_limite)
 
-    # "Óptimo" en este contexto: se revisa cuánto del cupo de cada slot se
-    # usa en promedio, como indicador de que no se desperdicia capacidad
-    # de forma sistemática.
     print("  Verificación de optimalidad (uso de cupo por slot):")
     total_slots = len(ruta_bajo)
     creditos_usados = sum(
@@ -382,24 +308,20 @@ def main() -> None:
     print("TrackIng - Pruebas de ruta_optima.py")
     print("=" * 70)
 
-    # 1) Selección interactiva de malla curricular (se mantiene intacta).
     malla_json, _archivo_malla = seleccionar_malla_interactiva()
     cursos_malla = malla_json["cursos"]
 
-    # 2) Promedio acumulado -> límite de créditos dinámico.
     promedio = solicitar_promedio_acumulado()
     limite_creditos = calcular_limite_creditos(promedio)
     print(f"\nPromedio ingresado: {promedio:.2f}")
     print(f"Límite de créditos asignado para esta ejecución: {limite_creditos} "
           "créditos por semestre.\n")
 
-    # 3) Carga automática de horarios vacacionales desde data/.
     periodos_vacacionales = cargar_periodos_vacacionales()
     print(f"Periodos vacacionales cargados: {len(periodos_vacacionales)} ciclos "
           f"disponibles (ej. '{periodos_vacacionales[0]['nombre']}')."
           if periodos_vacacionales else "Periodos vacacionales cargados: ninguno.")
 
-    # 4) Inyectar optativos-prerequisito como obligatorios temporales.
     malla_inyectada = inyectar_prerequisitos_optativos(cursos_malla)
     codigos_obligatorios_originales = {
         curso["codigo"] for curso in cursos_malla if curso.get("obligatorio", True)
@@ -414,7 +336,6 @@ def main() -> None:
         print("No hay optativos que deban inyectarse como obligatorios temporales "
               "en esta malla.")
 
-    # 5) Tres casos de prueba secuenciales.
     caso_1_estudiante_nuevo(malla_inyectada, periodos_vacacionales, limite_creditos)
     caso_2_perdio_matematica_basica_1(malla_inyectada, limite_creditos)
     caso_3_promedio_bajo(malla_inyectada)

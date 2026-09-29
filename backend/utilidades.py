@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-utilidades.py
-==============
-Funciones de consola compartidas entre test_algoritmo.py y plan_anual.py:
-carga de mallas curriculares, selección interactiva, cálculo del límite de
-créditos según el promedio, búsqueda de cursos por nombre (los códigos
-varían entre carreras) e impresión de rutas.
-
-Se separó de test_algoritmo.py para no duplicar lógica entre el script de
-pruebas y el script de planificación anual (plan_anual.py).
-"""
-
 from __future__ import annotations
 
 import json
@@ -45,7 +32,6 @@ def listar_mallas_disponibles() -> list[str]:
 
 
 def seleccionar_malla_interactiva() -> tuple[dict, str]:
-    """Lista las mallas disponibles en data/ y deja elegir una por número."""
     archivos = listar_mallas_disponibles()
 
     if not archivos:
@@ -77,24 +63,6 @@ def seleccionar_malla_interactiva() -> tuple[dict, str]:
 
 
 def cargar_periodos_vacacionales(cantidad: int = 30) -> list[dict]:
-    """
-    Carga data/horarios_vacaciones.json y retorna la lista de periodos
-    vacacionales a usar en el plan (en orden cronológico).
-
-    Soporta dos esquemas:
-    - Nuevo (recomendado): un único catálogo general en la clave
-      "periodo" ({"nombre": ..., "cursos_disponibles": [...]}), que se
-      reutiliza para cada ciclo de vacaciones que haga falta planificar
-      (mismo catálogo de cursos disponible en cualquier vacación, ya que
-      la oferta vacacional de la Facultad no cambia de un ciclo a otro).
-      Se generan `cantidad` copias etiquetadas "<nombre> (ciclo 1)",
-      "(ciclo 2)", etc. — de sobra para cualquier plan, incluso uno que
-      cubra toda la carrera restante con varios semestres de atraso.
-    - Antiguo: una lista ya armada en la clave "periodos", cada una con
-      su propio "nombre" y "cursos_disponibles" (por si en algún momento
-      sí se quiere declarar un catálogo distinto por ciclo). En este caso
-      se retorna tal cual, sin importar `cantidad`.
-    """
     ruta_horarios = os.path.join(DATA_DIR, ARCHIVO_HORARIOS_VACACIONES)
     if not os.path.isfile(ruta_horarios):
         raise SystemExit(
@@ -152,7 +120,6 @@ def _normalizar(texto: str) -> str:
 
 
 def buscar_curso_por_nombre(cursos: list[dict], fragmentos_clave: list[str]) -> dict | None:
-    """Primer curso cuyo nombre contenga TODOS los fragmentos (sin acentos/mayúsculas)."""
     fragmentos = [_normalizar(f) for f in fragmentos_clave]
     for curso in cursos:
         nombre = _normalizar(curso.get("nombre", ""))
@@ -162,7 +129,6 @@ def buscar_curso_por_nombre(cursos: list[dict], fragmentos_clave: list[str]) -> 
 
 
 def buscar_cursos_por_fragmento(cursos: list[dict], fragmento: str) -> list[dict]:
-    """Todos los cursos cuyo nombre contenga el fragmento dado (sin acentos/mayúsculas)."""
     fragmento_normalizado = _normalizar(fragmento)
     if not fragmento_normalizado:
         return []

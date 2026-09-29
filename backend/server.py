@@ -1,31 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-server.py
-=========
-Servidor HTTP (FastAPI) para TrackIng.
-
-No reimplementa ninguna lógica académica: reutiliza tal cual las funciones
-ya existentes en ruta_optima.py y utilidades.py (las mismas que usa
-plan_anual.py en consola), y solo las expone como endpoints HTTP para que
-el frontend pueda consumirlas.
-
-Además sirve el frontend estático (carpeta ../frontend) para poder correr
-todo con un solo comando.
-
-Ejecutar con:  python server.py
-(o bien:       uvicorn server:app --reload)
-"""
-
 from __future__ import annotations
 
 import os
 import sys
 import unicodedata
 
-# Asegura que este directorio (backend/) esté en sys.path, sin importar si
-# este módulo se ejecuta directamente (python server.py) o se importa como
-# paquete (p. ej. "backend.server" en Vercel), para que los imports planos
-# de abajo (ruta_optima, utilidades) sigan funcionando en ambos casos.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, HTTPException
@@ -87,23 +65,6 @@ def _normalizar_nombre(texto: str) -> str:
 
 
 def unificar_seminarios_investigacion(cursos: list[dict]) -> list[dict]:
-    """
-    En el 10mo semestre (9no, 11vo o 12vo según la carrera) existen dos
-    seminarios alternativos: "Seminario de Investigación ..." y
-    "Seminario de Investigación E.P.S. ...". El estudiante lleva solo UNO
-    de los dos, así que aquí se fusionan en un único curso llamado
-    "Seminario de Investigación o Seminario de Investigación E.P.S.".
-
-    - Conserva el código del seminario regular (así sigue coincidiendo con
-      horarios_vacaciones.json, que publica ese código).
-    - Queda como obligatorio (el estudiante debe llevar uno de los dos).
-    - "codigos_equivalentes" guarda los dos códigos originales.
-    - Si algún curso tuviera como prerequisito el código del seminario
-      E.P.S., se redirige al código del curso unificado.
-
-    Si la malla no tiene exactamente un seminario regular y uno E.P.S., se
-    devuelve sin cambios. Retorna una lista nueva; no modifica la original.
-    """
     seminarios = [
         c for c in cursos
         if _normalizar_nombre(c.get("nombre", "")).startswith("seminario de investigacion")
@@ -195,15 +156,12 @@ def calcular_plan(solicitud: SolicitudPlan):
     aprobados_input = set(solicitud.cursos_aprobados) - excluidos_input
     periodos_vacacionales = cargar_periodos_vacacionales()
 
-    # "No quiero llevarlo en semestre" -> solo vacaciones;
-    # "no quiero llevarlo en vacaciones" -> solo semestre.
     solo_vacaciones = set(solicitud.cursos_solo_vacaciones) - excluidos_input - aprobados_input
     solo_semestre = set(solicitud.cursos_solo_semestre) - excluidos_input - aprobados_input
-    solo_vacaciones -= solo_semestre  # ambos a la vez = curso descartado
+    solo_vacaciones -= solo_semestre
     ambos = set(solicitud.cursos_solo_vacaciones) & set(solicitud.cursos_solo_semestre)
     excluidos_input |= ambos - aprobados_input
 
-    # Un curso reservado para vacaciones debe estar en la oferta vacacional.
     oferta_vacacional = set()
     if periodos_vacacionales:
         for entrada in periodos_vacacionales[0].get("cursos_disponibles", []):
@@ -221,7 +179,6 @@ def calcular_plan(solicitud: SolicitudPlan):
         cursos_malla, aprobados_input
     )
 
-    # Cursos que el estudiante no quiere llevar (y lo que depende de ellos).
     cursos_filtrados, excluidos_efectivos = excluir_cursos(
         cursos_malla, excluidos_input, aprobados
     )
@@ -234,8 +191,6 @@ def calcular_plan(solicitud: SolicitudPlan):
     solo_vacaciones -= excluidos_efectivos
     solo_semestre -= excluidos_efectivos
 
-    # Un curso con restricción de periodo es un curso que sí quiere llevar:
-    # si era optativo, se incluye en el plan (con sus prerequisitos).
     cursos_filtrados = [
         {**c, "obligatorio": True} if c["codigo"] in (solo_vacaciones | solo_semestre) else c
         for c in cursos_filtrados
@@ -251,7 +206,6 @@ def calcular_plan(solicitud: SolicitudPlan):
         and codigo not in aprobados
     }
 
-    # Optativos / social humanística / idiomas que hacen falta para cerrar.
     cursos, objetivo = seleccionar_cursos_objetivo(
         cursos, aprobados, incluir_idiomas=solicitud.incluir_idiomas
     )
