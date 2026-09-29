@@ -24,7 +24,7 @@
 
   <section id="pantalla-carreras" class="pantalla">
     <h1>Elige tu carrera</h1>
-    <p class="subtitulo">Selecciona la carrera y el pénsum con el que vas a planificar tu ruta.</p>
+    <p class="subtitulo">Selecciona la carrera y el pénsum.</p>
     <div id="lista-carreras" class="lista-carreras"></div>
   </section>
 
@@ -41,26 +41,24 @@
     <div class="campo">
       <label>Marca los cursos que ya has ganado</label>
       <p class="ayuda">
-        Al elegir tu semestre se marcan en verde, por defecto, todos los cursos obligatorios
-        de semestres anteriores. Da click en cualquier curso para cambiar su estado
-        (por ejemplo, si vas en sexto semestre pero todavía no ganas Física 1, quítale la marca:
-        así el sistema sabe que la llevas atrasada).
+        Al elegir tu semestre se marcan en verde
+       
       </p>
       <div class="modo-marcado">
         <label><input type="radio" name="modo-marcado" value="ganados" checked> Marcar cursos ganados</label>
-        <label><input type="radio" name="modo-marcado" value="no-semestre"> No quiero llevarlo en semestre (solo en vacaciones)</label>
-        <label><input type="radio" name="modo-marcado" value="no-vacaciones"> No quiero llevarlo en vacaciones (solo en semestre)</label>
-        <label><input type="radio" name="modo-marcado" value="descartar"> Descartar curso (no lo quiero llevar nunca)</label>
+        <label><input type="radio" name="modo-marcado" value="no-semestre"> solo vacaciones</label>
+        <label><input type="radio" name="modo-marcado" value="no-vacaciones"> solo semestre</label>
+        <label><input type="radio" name="modo-marcado" value="descartar"> No se llevara nunca</label>
       </div>
-      <p class="ayuda">Con las opciones de "no quiero llevarlo" das click en un curso para reservarlo a un solo tipo de periodo; "Descartar" lo saca del plan por completo. Un curso solo para vacaciones tiene que estar en la oferta vacacional. El punto <span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
+      <p class="ayuda">Con la opción de "no quiero llevarlo nunca" hace que al moomento de trazar la ruta no aparezca<span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
       <div id="grid-cursos"></div>
     </div>
 
     <div class="campo oculto" id="campo-idiomas">
       <label class="check-idiomas">
-        <input type="checkbox" id="check-idiomas"> Quiero cursar los idiomas técnicos
+        <input type="checkbox" id="check-idiomas"> Cursar los idiomas técnicos
       </label>
-      <p class="ayuda">Si no lo marcas, los idiomas técnicos no se incluyen y el sistema completa los créditos con otros cursos más convenientes.</p>
+      <p class="ayuda">si no se marca no se toman en la ruta los idiomas tecnicos y el sistema completa los créditos con otros cursos</p>
     </div>
 
     <div class="campo">
@@ -75,7 +73,7 @@
 
     <div class="acciones-formulario">
       <button id="btn-calcular" class="btn btn-primario">Calcular mi ruta</button>
-      <button id="btn-limpiar" class="btn btn-secundario" type="button">Limpiar campos</button>
+      <button id="btn-limpiar" class="btn btn-secundario" type="button">Limpiar</button>
     </div>
     <p id="mensaje-error" class="mensaje-error oculto"></p>
   </section>
