@@ -33,7 +33,7 @@
     <h1 id="titulo-formulario"></h1>
 
     <div class="campo">
-      <label for="select-semestre">¿Dónde vas actualmente?</label>
+      <label for="select-semestre">¿Qué semestre te toca cursar?</label>
       <p class="ayuda">Elige tu semestre, o el periodo de vacaciones que sigue al semestre que ya terminaste.</p>
       <select id="select-semestre"></select>
     </div>
@@ -46,11 +46,11 @@
       </p>
       <div class="modo-marcado">
         <label><input type="radio" name="modo-marcado" value="ganados" checked> Marcar cursos ganados</label>
-        <label><input type="radio" name="modo-marcado" value="no-semestre"> solo vacaciones</label>
-        <label><input type="radio" name="modo-marcado" value="no-vacaciones"> solo semestre</label>
-        <label><input type="radio" name="modo-marcado" value="descartar"> No se llevara nunca</label>
+        <label><input type="radio" name="modo-marcado" value="no-semestre"> Solo vacaciones</label>
+        <label><input type="radio" name="modo-marcado" value="no-vacaciones"> Solo semestre</label>
+        <label><input type="radio" name="modo-marcado" value="descartar"> No se llevará nunca</label>
       </div>
-      <p class="ayuda">Con la opción de "no quiero llevarlo nunca" hace que al moomento de trazar la ruta no aparezca<span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
+      <p class="ayuda">Con la opción de "No se llevará nunca" hace que al moomento de trazar la ruta no aparezca. <span class="punto-obligatorio">●</span> indica que el curso es obligatorio.</p>
       <div id="grid-cursos"></div>
     </div>
 
@@ -58,7 +58,7 @@
       <label class="check-idiomas">
         <input type="checkbox" id="check-idiomas"> Cursar los idiomas técnicos
       </label>
-      <p class="ayuda">si no se marca no se toman en la ruta los idiomas tecnicos y el sistema completa los créditos con otros cursos</p>
+      <p class="ayuda">Si no se marca no se toman en la ruta los idiomas tecnicos y el sistema completa los créditos con otros cursos.</p>
     </div>
 
     <div class="campo">
